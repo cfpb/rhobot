@@ -1,7 +1,11 @@
 package healthcheck
 
 import (
+	"fmt"
+	"io/ioutil"
 	"log"
+
+	"database/sql"
 
 	"gopkg.in/yaml.v2"
 )
@@ -34,19 +38,54 @@ type HealthCheckFormat struct {
 	HealthChecks []SqlHealthCheck       `yaml:"healthchecks"`
 }
 
-func unmarshalHealthChecks(yamldata string) HealthCheckFormat {
+func unmarshalHealthChecks(yamldata []byte) HealthCheckFormat {
 
 	var data HealthCheckFormat
 
-	// []byte conversion happens here
-	err := yaml.Unmarshal([]byte(yamldata), &data)
+	err := yaml.Unmarshal(yamldata, &data)
 	if err != nil {
 		log.Fatalf("ERROR: %v", err)
 	}
-
 	// inflate queryfiles
-
-	// log.Printf("HEALTH CHECKS: %v", data)
-
 	return data
+}
+
+func ReadYamlFromFile(path string) HealthCheckFormat {
+	data, err := ioutil.ReadFile(path)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return unmarshalHealthChecks(data)
+}
+
+func RunHealthChecks(healthChecks HealthCheckFormat, cxn *sql.DB) HealthCheckFormat {
+
+	for _, healthCheck := range healthChecks.HealthChecks {
+		fmt.Println(healthCheck.Query)
+		rows, _ := cxn.Query(healthCheck.Query)
+		var answer string
+		rows.Next()
+		rows.Scan(&answer)
+		fmt.Println(answer)
+		healthCheck.Passed = healthCheck.Expected == answer
+		healthCheck.Actual = answer
+
+		fmt.Printf("HEALTH CHECK: %s, Expected: %s, Found:%s\n", healthCheck.Name, healthCheck.Expected, answer)
+
+	}
+	return healthChecks
+}
+
+func EvaluateHealthChecks(healthChecks HealthCheckFormat) {
+	var errors []SqlHealthCheck
+
+	for _, healthCheck := range healthChecks.HealthChecks {
+		if !healthCheck.Passed && healthCheck.Error {
+			errors = append(errors, healthCheck)
+		}
+	}
+
+	if len(errors) > 0 {
+		log.Fatalf("The folllowing health checks failed", errors)
+	}
 }

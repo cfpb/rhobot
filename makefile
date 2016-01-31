@@ -5,7 +5,7 @@ GOFLAGS ?= -v$(GOFLAGS:)
 
 PGHOST ?=localhost
 PGPORT ?=5432
-PGDATABASE ?=my_database
+PGDATABASE ?=my_databaseRi
 PGUSER ?=my_user
 PGPASSWORD ?=my_password
 
@@ -15,7 +15,7 @@ all: build test
 build:
 	@go build $(GOFLAGS) ./...
 
-test: fixtures
+test:
 	@go test $(GOFLAGS) ./...
 
 ccdb.csv:
