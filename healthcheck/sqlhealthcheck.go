@@ -15,27 +15,23 @@ func Hello() string {
 	return "Hello, healthy world.\n"
 }
 
-// SqlHealthCheckMetadata contains control information for a set of SqlHealthChecks
-type SqlHealthCheckMetadata struct {
-	Distribution []string
-}
-
 // SqlHealthCheck is a data type for storing the definition
 // and results of a SQL based health check
 type SqlHealthCheck struct {
-	Name  string `yaml:"name"`
-	Query string `yaml:"query"`
-	// QueryFile string `yaml:"queryfile"`
 	Expected string `yaml:"expected"`
-	Actual   string
-	Error    bool `yaml:"error"`
+	Query    string `yaml:"query"`
+	Title    string `yaml:"title"`
+	Error    bool   `yaml:"error"`
 	Passed   bool
+	Actual   string
 }
 
 // HealthCheckFormat is for unmarshiling a healthcheck file
+// and contains control information for a set of SqlHealthChecks
 type HealthCheckFormat struct {
-	Metadata     SqlHealthCheckMetadata `yaml:"metadata"`
-	HealthChecks []SqlHealthCheck       `yaml:"healthchecks"`
+	Name         string           `yaml:"name"`
+	Distribution []string         `yaml:"distribution"`
+	Tests        []SqlHealthCheck `yaml:"tests"`
 }
 
 func unmarshalHealthChecks(yamldata []byte) HealthCheckFormat {
@@ -60,7 +56,7 @@ func ReadYamlFromFile(path string) HealthCheckFormat {
 
 func RunHealthChecks(healthChecks HealthCheckFormat, cxn *sql.DB) HealthCheckFormat {
 
-	for _, healthCheck := range healthChecks.HealthChecks {
+	for _, healthCheck := range healthChecks.Tests {
 		fmt.Println(healthCheck.Query)
 		rows, _ := cxn.Query(healthCheck.Query)
 		var answer string
@@ -70,7 +66,7 @@ func RunHealthChecks(healthChecks HealthCheckFormat, cxn *sql.DB) HealthCheckFor
 		healthCheck.Passed = healthCheck.Expected == answer
 		healthCheck.Actual = answer
 
-		fmt.Printf("HEALTH CHECK: %s, Expected: %s, Found:%s\n", healthCheck.Name, healthCheck.Expected, answer)
+		fmt.Printf("HEALTH CHECK: %s, Expected: %s, Found:%s\n", healthCheck.Title, healthCheck.Expected, answer)
 
 	}
 	return healthChecks
@@ -79,7 +75,7 @@ func RunHealthChecks(healthChecks HealthCheckFormat, cxn *sql.DB) HealthCheckFor
 func EvaluateHealthChecks(healthChecks HealthCheckFormat) {
 	var errors []SqlHealthCheck
 
-	for _, healthCheck := range healthChecks.HealthChecks {
+	for _, healthCheck := range healthChecks.Tests {
 		if !healthCheck.Passed && healthCheck.Error {
 			errors = append(errors, healthCheck)
 		}

@@ -1,7 +1,9 @@
 package healthcheck
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"reflect"
 	"testing"
@@ -11,37 +13,15 @@ import (
 	"github.com/cfpb/rhobot/database"
 )
 
-var healthchecks = []byte(`---
-healthchecks:
-  -
-    error: true
-    expected: true
-    name: "basic test 1 (should pass)"
-    query: "select (select count(1) from information_schema.tables) > 0;"
-  -
-    error: false
-    expected: true
-    name: "basic test 2 (should pass)"
-    query: "select (select count(1) from information_schema.tables) > 0;"
-  -
-    error: false
-    expected: false
-    name: "basic test 3 (should warn)"
-    query: "select (select count(1) from information_schema.tables) > 0;"
-  -
-    error: true
-    expected: false
-    name: "basic test 4 (should error)"
-    query: "select (select count(1) from information_schema.tables) > 0;"
-  -
-    error: true
-    expected: 0
-    name: "basic test 5 (should error)"
-    query: "select count(1) from information_schema.tables;"
-metadata:
-  distribution:
-    - stefan.fox@cfpb.gov
-`)
+var healthchecks []byte
+
+func init() {
+	buf := bytes.NewBuffer(nil)
+	f, _ := os.Open("test.yml")
+	io.Copy(buf, f)
+	f.Close()
+	healthchecks = buf.Bytes()
+}
 
 func TestUnmarshal(t *testing.T) {
 

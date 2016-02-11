@@ -1,30 +1,25 @@
----
-healthchecks:
-  -
-    error: true
-    expected: true
-    name: "basic test 1 (should pass)"
-    query: "select (select count(1) from information_schema.tables) > 0;"
-  -
-    error: false
-    expected: true
-    name: "basic test 2 (should pass)"
-    query: "select (select count(1) from information_schema.tables) > 0;"
-  -
-    error: false
-    expected: false
-    name: "basic test 3 (should warn)"
-    query: "select (select count(1) from information_schema.tables) > 0;"
-  -
-    error: true
-    expected: false
-    name: "basic test 4 (should error)"
-    query: "select (select count(1) from information_schema.tables) > 0;"
-  -
-    error: true
-    expected: 0
-    name: "basic test 5 (should error)"
-    query: "select count(1) from information_schema.tables;"
-metadata:
-  distribution:
-    - stefan.fox@cfpb.gov
+name: rhobot healthcheck test
+distribution:
+- stefan.fox@cfpb.gov
+- francisco@cfpb.gov
+tests:
+- error: true
+  expected: true
+  title: "basic test 1 (should pass)"
+  query: "select (select count(1) from information_schema.tables) > 0;"
+- error: false
+  expected: true
+  title: "basic test 2 (should pass)"
+  query: "select (select count(1) from information_schema.tables) > 0;"
+- error: false
+  expected: false
+  title: "basic test 3 (should warn)"
+  query: "select (select count(1) from information_schema.tables) > 0;"
+- error: true
+  expected: false
+  title: "basic test 4 (should error)"
+  query: "select (select count(1) from information_schema.tables) > 0;"
+- error: true
+  expected: 0
+  title: "basic test 5 (should error)"
+  query: "select count(1) from information_schema.tables;"
