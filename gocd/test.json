@@ -1,13 +1,13 @@
 {
   "_links": {
     "self": {
-      "href": "http://10.95.74.117:8153/go/api/admin/pipelines/test"
+      "href": "http://localhost:8153/go/api/admin/pipelines/test"
     },
     "doc": {
       "href": "http://api.go.cd/#pipeline_config"
     },
     "find": {
-      "href": "http://10.95.74.117:8153/go/api/admin/pipelines/:name"
+      "href": "http://localhost:8153/go/api/admin/pipelines/:name"
     }
   },
   "label_template": "${COUNT}",
@@ -53,7 +53,7 @@
     {
       "type": "git",
       "attributes": {
-        "url": "https://github.cfpb.gov/databases/test.git",
+        "url": "https://github.com/cfpb/rhobot-test.git?",
         "destination": "project",
         "filter": null,
         "name": null,
@@ -65,8 +65,8 @@
     {
       "type": "git",
       "attributes": {
-        "url": "https://github.cfpb.gov/databases/pg-templates.git",
-        "destination": "pg-templates",
+        "url": "https://github.com/cfpb/common-templates-test.git",
+        "destination": "common-templates",
         "filter": null,
         "name": null,
         "auto_update": true,
