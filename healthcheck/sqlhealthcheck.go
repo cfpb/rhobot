@@ -1,19 +1,14 @@
 package healthcheck
 
 import (
-	"fmt"
 	"io/ioutil"
 	"log"
+	"strings"
 
 	"database/sql"
 
 	"gopkg.in/yaml.v2"
 )
-
-//Hello this should work
-func Hello() string {
-	return "Hello, healthy world.\n"
-}
 
 // SqlHealthCheck is a data type for storing the definition
 // and results of a SQL based health check
@@ -21,7 +16,7 @@ type SqlHealthCheck struct {
 	Expected string `yaml:"expected"`
 	Query    string `yaml:"query"`
 	Title    string `yaml:"title"`
-	Error    bool   `yaml:"error"`
+	Severity string `yaml:"severity"`
 	Passed   bool
 	Actual   string
 }
@@ -42,6 +37,7 @@ func unmarshalHealthChecks(yamldata []byte) HealthCheckFormat {
 	if err != nil {
 		log.Fatalf("ERROR: %v", err)
 	}
+
 	// inflate queryfiles
 	return data
 }
@@ -57,31 +53,48 @@ func ReadYamlFromFile(path string) HealthCheckFormat {
 func RunHealthChecks(healthChecks HealthCheckFormat, cxn *sql.DB) HealthCheckFormat {
 
 	for _, healthCheck := range healthChecks.Tests {
-		fmt.Println(healthCheck.Query)
-		rows, _ := cxn.Query(healthCheck.Query)
-		var answer string
-		rows.Next()
-		rows.Scan(&answer)
-		fmt.Println(answer)
-		healthCheck.Passed = healthCheck.Expected == answer
-		healthCheck.Actual = answer
-
-		fmt.Printf("HEALTH CHECK: %s, Expected: %s, Found:%s\n", healthCheck.Title, healthCheck.Expected, answer)
-
+		healthCheck = RunHealthCheck(healthCheck, cxn)
 	}
 	return healthChecks
 }
 
 func EvaluateHealthChecks(healthChecks HealthCheckFormat) {
-	var errors []SqlHealthCheck
+	var failed []SqlHealthCheck
 
 	for _, healthCheck := range healthChecks.Tests {
-		if !healthCheck.Passed && healthCheck.Error {
-			errors = append(errors, healthCheck)
-		}
-	}
 
-	if len(errors) > 0 {
-		log.Fatalf("The folllowing health checks failed", errors)
+		if !healthCheck.Passed {
+
+			failed = append(failed, healthCheck)
+			prettyHealthCheck, _ := yaml.Marshal(&healthCheck)
+
+			switch strings.ToLower(healthCheck.Severity) {
+			case "fatal":
+				prettyHealthCheck, _ := yaml.Marshal(&healthCheck)
+				log.Printf("FATAL healthcheck failed\nBreaking Away Early\n%s\n\n", string(prettyHealthCheck))
+				break
+			case "error", "warn", "info":
+				prettyHealthCheck, _ := yaml.Marshal(&healthCheck)
+				log.Printf("%s healthcheck failed\n %s\n\n", strings.ToUpper(healthCheck.Severity), string(prettyHealthCheck))
+			default:
+				log.Printf("undefined severity level:%s\n%s\n\n", strings.ToUpper(healthCheck.Severity), string(prettyHealthCheck))
+			}
+		}
+
+		//         //TODO: Replace with reporting module to send back results of healthchecks
+		// 		if len(failed) > 0 {
+		// 			prettyFailed, _ := yaml.Marshal(&failed)
+		// 			log.Printf("The folllowing health checks failed\n %s\n\n", string(prettyFailed))
+		// 		}
 	}
+}
+
+func RunHealthCheck(healthCheck SqlHealthCheck, cxn *sql.DB) SqlHealthCheck {
+	rows, _ := cxn.Query(healthCheck.Query)
+	var answer string
+	rows.Next()
+	rows.Scan(&answer)
+	healthCheck.Passed = healthCheck.Expected == answer
+	healthCheck.Actual = answer
+	return healthCheck
 }
