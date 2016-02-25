@@ -16,9 +16,6 @@ func main() {
 	app.Name = "Rhobot"
 	app.Usage = "Rhobot is your friend."
 	app.EnableBashCompletion = true
-	// app.Action = func(c *cli.Context) {
-	// 	fmt.Printf(healthcheck.Hello())
-	// }
 
 	app.Commands = []cli.Command{
 		{
@@ -34,7 +31,6 @@ func main() {
 						path := c.Args()[1]
 						fmt.Println("DB_URI: ", dburi)
 						fmt.Println("PATH: ", path)
-						fmt.Println(healthcheck.Hello())
 
 						healthChecks := healthcheck.ReadYamlFromFile(path)
 						cxn := database.GetPGConnection(dburi)
