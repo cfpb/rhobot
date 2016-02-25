@@ -3,23 +3,23 @@ distribution:
 - stefan.fox@cfpb.gov
 - francisco@cfpb.gov
 tests:
-- error: true
+- severity: "warn"
   expected: true
   title: "basic test 1 (should pass)"
   query: "select (select count(1) from information_schema.tables) > 0;"
-- error: false
+- severity: "warn"
   expected: true
   title: "basic test 2 (should pass)"
   query: "select (select count(1) from information_schema.tables) > 0;"
-- error: false
+- severity: "warn"
   expected: false
   title: "basic test 3 (should warn)"
   query: "select (select count(1) from information_schema.tables) > 0;"
-- error: true
+- severity: "error"
   expected: false
   title: "basic test 4 (should error)"
   query: "select (select count(1) from information_schema.tables) > 0;"
-- error: true
+- severity: "fatal"
   expected: 0
   title: "basic test 5 (should error)"
   query: "select count(1) from information_schema.tables;"
