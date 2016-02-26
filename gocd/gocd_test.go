@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	//"github.com/davecgh/go-spew/spew"
 	"io"
 	"os"
 	"reflect"
@@ -27,7 +26,6 @@ func TestMarshalJSONHAL(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	//spew.Dump(pipeline)
 	fmt.Printf("Pipeline Name: %+v\n", pipeline.Name)
 	fmt.Printf("Pipeline Git URL: %v:%v\n", pipeline.Materials[0].Attributes.URL, pipeline.Materials[0].Attributes.Branch)
 }
