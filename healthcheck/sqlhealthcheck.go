@@ -10,9 +10,9 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// SqlHealthCheck is a data type for storing the definition
+// SQLHealthCheck is a data type for storing the definition
 // and results of a SQL based health check
-type SqlHealthCheck struct {
+type SQLHealthCheck struct {
 	Expected string `yaml:"expected"`
 	Query    string `yaml:"query"`
 	Title    string `yaml:"title"`
@@ -21,17 +21,17 @@ type SqlHealthCheck struct {
 	Actual   string
 }
 
-// HealthCheckFormat is for unmarshiling a healthcheck file
-// and contains control information for a set of SqlHealthChecks
-type HealthCheckFormat struct {
+// Format is for unmarshiling a healthcheck file
+// and contains control information for a set of SQLHealthChecks
+type Format struct {
 	Name         string           `yaml:"name"`
 	Distribution []string         `yaml:"distribution"`
-	Tests        []SqlHealthCheck `yaml:"tests"`
+	Tests        []SQLHealthCheck `yaml:"tests"`
 }
 
-func unmarshalHealthChecks(yamldata []byte) HealthCheckFormat {
+func unmarshalHealthChecks(yamldata []byte) Format {
 
-	var data HealthCheckFormat
+	var data Format
 
 	err := yaml.Unmarshal(yamldata, &data)
 	if err != nil {
@@ -42,7 +42,8 @@ func unmarshalHealthChecks(yamldata []byte) HealthCheckFormat {
 	return data
 }
 
-func ReadYamlFromFile(path string) HealthCheckFormat {
+// ReadYamlFromFile loads healthcheck data from a YAML file
+func ReadYamlFromFile(path string) Format {
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
 		log.Fatal(err)
@@ -50,7 +51,8 @@ func ReadYamlFromFile(path string) HealthCheckFormat {
 	return unmarshalHealthChecks(data)
 }
 
-func RunHealthChecks(healthChecks HealthCheckFormat, cxn *sql.DB) HealthCheckFormat {
+// RunHealthChecks executes all health checks in the specified file
+func RunHealthChecks(healthChecks Format, cxn *sql.DB) Format {
 
 	for _, healthCheck := range healthChecks.Tests {
 		healthCheck = RunHealthCheck(healthCheck, cxn)
@@ -58,8 +60,9 @@ func RunHealthChecks(healthChecks HealthCheckFormat, cxn *sql.DB) HealthCheckFor
 	return healthChecks
 }
 
-func EvaluateHealthChecks(healthChecks HealthCheckFormat) {
-	var failed []SqlHealthCheck
+// EvaluateHealthChecks contains logic for handling the results of RunHealthChecks
+func EvaluateHealthChecks(healthChecks Format) {
+	var errors []SQLHealthCheck
 
 	for _, healthCheck := range healthChecks.Tests {
 

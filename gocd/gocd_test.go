@@ -4,30 +4,28 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	//"github.com/davecgh/go-spew/spew"
 	"io"
 	"os"
 	"reflect"
 	"testing"
 )
 
-var gocd_pipeline_config []byte
+var gocdPipelineConfig []byte
 
 func init() {
 	buf := bytes.NewBuffer(nil)
 	f, _ := os.Open("./test.json")
 	io.Copy(buf, f)
 	f.Close()
-	gocd_pipeline_config = buf.Bytes()
+	gocdPipelineConfig = buf.Bytes()
 }
 
 func TestMarshalJSONHAL(t *testing.T) {
 	fmt.Println("TestMarshalJSONHAL")
-	pipeline, err := readPipelineJSONFromFile("./test.json")
+	pipeline, err := ReadPipelineJSONFromFile("./test.json")
 	if err != nil {
 		t.Error(err)
 	}
-	//spew.Dump(pipeline)
 	fmt.Printf("Pipeline Name: %+v\n", pipeline.Name)
 	fmt.Printf("Pipeline Git URL: %v:%v\n", pipeline.Materials[0].Attributes.URL, pipeline.Materials[0].Attributes.Branch)
 }
@@ -35,13 +33,13 @@ func TestMarshalJSONHAL(t *testing.T) {
 // TestUnmarshalFidelityLoss checks that data can be reserielized without fidelity loss
 func TestUnmarshalFidelityLoss(t *testing.T) {
 	fmt.Println("TestUnmarshalFidelityLoss")
-	data, err1 := unmarshalPipeline(gocd_pipeline_config)
+	data, err1 := unmarshalPipeline(gocdPipelineConfig)
 	if err1 != nil {
 		t.Error(err1)
 	}
 
-	gocd_pipeline_config2, _ := json.Marshal(data)
-	data2, err2 := unmarshalPipeline(gocd_pipeline_config2)
+	gocdPipelineConfig2, _ := json.Marshal(data)
+	data2, err2 := unmarshalPipeline(gocdPipelineConfig2)
 	if err2 != nil {
 		t.Error(err2)
 	}
@@ -53,7 +51,7 @@ func TestUnmarshalFidelityLoss(t *testing.T) {
 
 func TestGocdPOST(t *testing.T) {
 	fmt.Println("TestGocdPOST")
-	pipeline, _ := readPipelineJSONFromFile("./test.json")
+	pipeline, _ := ReadPipelineJSONFromFile("./test.json")
 	pipelineConfig := PipelineConfig{"Dev", pipeline}
 	_, err := pipelineConfigPOST("http://localhost:8153", pipelineConfig)
 	if err != nil {

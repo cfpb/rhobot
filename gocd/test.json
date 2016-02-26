@@ -40,7 +40,7 @@
         {
             "type": "git",
             "attributes": {
-                "url": "https://github.com/cfpb/rhobot-test.git?",
+                "url": "https://github.com/cfpb/rhobot-test.git",
                 "destination": "project",
                 "filter": null,
                 "name": null,
