@@ -34,9 +34,8 @@ func main() {
 
 						healthChecks := healthcheck.ReadYamlFromFile(path)
 						cxn := database.GetPGConnection(dburi)
-
-						healthcheck.RunHealthChecks(healthChecks, cxn)
-
+						healthcheck.PreformHealthChecks(healthChecks, cxn)
+						//TODO: turn results into report
 					},
 				},
 				{
