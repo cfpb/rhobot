@@ -15,11 +15,3 @@ tests:
   expected: false
   title: "basic test 3 (should warn)"
   query: "select (select count(1) from information_schema.tables) > 0;"
-- severity: "error"
-  expected: false
-  title: "basic test 4 (should error)"
-  query: "select (select count(1) from information_schema.tables) > 0;"
-- severity: "fatal"
-  expected: 0
-  title: "basic test 5 (should error)"
-  query: "select count(1) from information_schema.tables;"
