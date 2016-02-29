@@ -1,11 +1,11 @@
 package healthcheck
 
 import (
+	"database/sql"
+	"errors"
 	"io/ioutil"
 	"log"
 	"strings"
-
-	"database/sql"
 
 	"gopkg.in/yaml.v2"
 )
@@ -61,38 +61,44 @@ func RunHealthChecks(healthChecks Format, cxn *sql.DB) Format {
 }
 
 // EvaluateHealthChecks contains logic for handling the results of RunHealthChecks
-func EvaluateHealthChecks(healthChecks Format) {
-	var errors []SQLHealthCheck
+func EvaluateHealthChecks(healthChecks Format) (results []SQLHealthCheck, err error) {
 
 	for _, healthCheck := range healthChecks.Tests {
 
+		results = append(results, healthCheck)
 		if !healthCheck.Passed {
-
-			failed = append(failed, healthCheck)
 			prettyHealthCheck, _ := yaml.Marshal(&healthCheck)
 
 			switch strings.ToLower(healthCheck.Severity) {
+
+			// When Fatal, return early with an error
 			case "fatal":
 				prettyHealthCheck, _ := yaml.Marshal(&healthCheck)
 				log.Printf("FATAL healthcheck failed\nBreaking Away Early\n%s\n\n", string(prettyHealthCheck))
-				break
-			case "error", "warn", "info":
+				err = errors.New("FATAL healthCheck failure")
+				return results, err
+
+			// When Error, keep running but add an error
+			case "error":
+				prettyHealthCheck, _ := yaml.Marshal(&healthCheck)
+				log.Printf("%s healthcheck failed\n %s\n\n", strings.ToUpper(healthCheck.Severity), string(prettyHealthCheck))
+				err = errors.New("ERROR healthCheck failure")
+
+			// When warn or info, print out the result and keep running
+			case "warn", "info":
 				prettyHealthCheck, _ := yaml.Marshal(&healthCheck)
 				log.Printf("%s healthcheck failed\n %s\n\n", strings.ToUpper(healthCheck.Severity), string(prettyHealthCheck))
 			default:
 				log.Printf("undefined severity level:%s\n%s\n\n", strings.ToUpper(healthCheck.Severity), string(prettyHealthCheck))
 			}
 		}
-
-		//         //TODO: Replace with reporting module to send back results of healthchecks
-		// 		if len(failed) > 0 {
-		// 			prettyFailed, _ := yaml.Marshal(&failed)
-		// 			log.Printf("The folllowing health checks failed\n %s\n\n", string(prettyFailed))
-		// 		}
 	}
+
+	return results, err
 }
 
-func RunHealthCheck(healthCheck SqlHealthCheck, cxn *sql.DB) SqlHealthCheck {
+// RunHealthCheck runs through a single healthcheck and saves the result
+func RunHealthCheck(healthCheck SQLHealthCheck, cxn *sql.DB) SQLHealthCheck {
 	rows, _ := cxn.Query(healthCheck.Query)
 	var answer string
 	rows.Next()
