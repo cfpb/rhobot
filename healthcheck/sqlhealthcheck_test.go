@@ -104,3 +104,17 @@ func TestEvaluatingFatalChecks(t *testing.T) {
 		t.Error("healthchecks results wrong length")
 	}
 }
+
+func TestPreformAllChecks(t *testing.T) {
+
+	cxn := database.GetPGConnection(uri)
+	healthChecks := ReadYamlFromFile("healthchecksAll.yml")
+	results, err := PreformHealthChecks(healthChecks, cxn)
+
+	if err == nil {
+		t.Error("healthchecksAll did not throw an error")
+	}
+	if len(results) != 5 {
+		t.Error("healthchecks results wrong length")
+	}
+}

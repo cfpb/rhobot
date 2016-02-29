@@ -29,6 +29,12 @@ type Format struct {
 	Tests        []SQLHealthCheck `yaml:"tests"`
 }
 
+// HCError is a error helper for knowing to exit early on a failed healthcheck
+type HCError struct {
+	Err  string
+	Exit bool
+}
+
 func unmarshalHealthChecks(yamldata []byte) Format {
 
 	var data Format
@@ -64,36 +70,37 @@ func RunHealthChecks(healthChecks Format, cxn *sql.DB) Format {
 func EvaluateHealthChecks(healthChecks Format) (results []SQLHealthCheck, err error) {
 
 	for _, healthCheck := range healthChecks.Tests {
-
 		results = append(results, healthCheck)
-		if !healthCheck.Passed {
-			prettyHealthCheck, _ := yaml.Marshal(&healthCheck)
+		hcErr := EvaluateHealthCheck(healthCheck)
 
-			switch strings.ToLower(healthCheck.Severity) {
-
-			// When Fatal, return early with an error
-			case "fatal":
-				prettyHealthCheck, _ := yaml.Marshal(&healthCheck)
-				log.Printf("FATAL healthcheck failed\nBreaking Away Early\n%s\n\n", string(prettyHealthCheck))
-				err = errors.New("FATAL healthCheck failure")
-				return results, err
-
-			// When Error, keep running but add an error
-			case "error":
-				prettyHealthCheck, _ := yaml.Marshal(&healthCheck)
-				log.Printf("%s healthcheck failed\n %s\n\n", strings.ToUpper(healthCheck.Severity), string(prettyHealthCheck))
-				err = errors.New("ERROR healthCheck failure")
-
-			// When warn or info, print out the result and keep running
-			case "warn", "info":
-				prettyHealthCheck, _ := yaml.Marshal(&healthCheck)
-				log.Printf("%s healthcheck failed\n %s\n\n", strings.ToUpper(healthCheck.Severity), string(prettyHealthCheck))
-			default:
-				log.Printf("undefined severity level:%s\n%s\n\n", strings.ToUpper(healthCheck.Severity), string(prettyHealthCheck))
-			}
+		if hcErr.Err != "" {
+			err = errors.New(hcErr.Err)
 		}
-	}
 
+		if hcErr.Exit {
+			return results, err
+		}
+
+	}
+	return results, err
+}
+
+// PreformHealthChecks runs and evaluates healthChecks one at a time
+func PreformHealthChecks(healthChecks Format, cxn *sql.DB) (results []SQLHealthCheck, err error) {
+	for _, healthCheck := range healthChecks.Tests {
+		healthCheck = RunHealthCheck(healthCheck, cxn)
+		results = append(results, healthCheck)
+		hcErr := EvaluateHealthCheck(healthCheck)
+
+		if hcErr.Err != "" {
+			err = errors.New(hcErr.Err)
+		}
+
+		if hcErr.Exit {
+			return results, err
+		}
+
+	}
 	return results, err
 }
 
@@ -106,4 +113,37 @@ func RunHealthCheck(healthCheck SQLHealthCheck, cxn *sql.DB) SQLHealthCheck {
 	healthCheck.Passed = healthCheck.Expected == answer
 	healthCheck.Actual = answer
 	return healthCheck
+}
+
+// EvaluateHealthCheck runs through a single healthcheck and acts on the result
+func EvaluateHealthCheck(healthCheck SQLHealthCheck) (err HCError) {
+
+	if !healthCheck.Passed {
+		prettyHealthCheck, _ := yaml.Marshal(&healthCheck)
+
+		switch strings.ToLower(healthCheck.Severity) {
+
+		// When Fatal, return early with an error
+		case "fatal":
+			prettyHealthCheck, _ := yaml.Marshal(&healthCheck)
+			log.Printf("FATAL healthcheck failed\nBreaking Away Early\n%s\n\n", string(prettyHealthCheck))
+			err = HCError{"FATAL healthCheck failure", true}
+
+		// When Error, keep running but add an error
+		case "error":
+			prettyHealthCheck, _ := yaml.Marshal(&healthCheck)
+			log.Printf("%s healthcheck failed\n %s\n\n", strings.ToUpper(healthCheck.Severity), string(prettyHealthCheck))
+			err = HCError{"ERROR healthCheck failure", false}
+
+		// When warn or info, print out the result and keep running
+		case "warn", "info":
+			prettyHealthCheck, _ := yaml.Marshal(&healthCheck)
+			log.Printf("%s healthcheck failed\n %s\n\n", strings.ToUpper(healthCheck.Severity), string(prettyHealthCheck))
+		default:
+			log.Printf("undefined severity level:%s\n%s\n\n", strings.ToUpper(healthCheck.Severity), string(prettyHealthCheck))
+		}
+	}
+
+	return err
+
 }
