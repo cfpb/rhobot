@@ -60,8 +60,8 @@ func ReadYamlFromFile(path string) Format {
 // RunHealthChecks executes all health checks in the specified file
 func RunHealthChecks(healthChecks Format, cxn *sql.DB) Format {
 
-	for _, healthCheck := range healthChecks.Tests {
-		healthCheck = RunHealthCheck(healthCheck, cxn)
+	for _, test := range healthChecks.Tests {
+		test = RunHealthCheck(test, cxn)
 	}
 	return healthChecks
 }
@@ -69,16 +69,16 @@ func RunHealthChecks(healthChecks Format, cxn *sql.DB) Format {
 // EvaluateHealthChecks contains logic for handling the results of RunHealthChecks
 func EvaluateHealthChecks(healthChecks Format) (results []SQLHealthCheck, err error) {
 
-	for _, healthCheck := range healthChecks.Tests {
-		results = append(results, healthCheck)
-		hcErr := EvaluateHealthCheck(healthCheck)
+	for _, test := range healthChecks.Tests {
+		results = append(results, test)
+		hcErr := EvaluateHealthCheck(test)
 
 		if hcErr.Err != "" {
 			err = errors.New(hcErr.Err)
 		}
 
 		if hcErr.Exit {
-			return results, err
+			break
 		}
 
 	}
@@ -87,17 +87,17 @@ func EvaluateHealthChecks(healthChecks Format) (results []SQLHealthCheck, err er
 
 // PreformHealthChecks runs and evaluates healthChecks one at a time
 func PreformHealthChecks(healthChecks Format, cxn *sql.DB) (results []SQLHealthCheck, err error) {
-	for _, healthCheck := range healthChecks.Tests {
-		healthCheck = RunHealthCheck(healthCheck, cxn)
-		results = append(results, healthCheck)
-		hcErr := EvaluateHealthCheck(healthCheck)
+	for _, test := range healthChecks.Tests {
+		test = RunHealthCheck(test, cxn)
+		results = append(results, test)
+		hcErr := EvaluateHealthCheck(test)
 
 		if hcErr.Err != "" {
 			err = errors.New(hcErr.Err)
 		}
 
 		if hcErr.Exit {
-			return results, err
+			break
 		}
 
 	}
@@ -118,9 +118,8 @@ func RunHealthCheck(healthCheck SQLHealthCheck, cxn *sql.DB) SQLHealthCheck {
 // EvaluateHealthCheck runs through a single healthcheck and acts on the result
 func EvaluateHealthCheck(healthCheck SQLHealthCheck) (err HCError) {
 
+	prettyHealthCheck, _ := yaml.Marshal(&healthCheck)
 	if !healthCheck.Passed {
-		prettyHealthCheck, _ := yaml.Marshal(&healthCheck)
-
 		switch strings.ToLower(healthCheck.Severity) {
 
 		// When Fatal, return early with an error
@@ -142,6 +141,8 @@ func EvaluateHealthCheck(healthCheck SQLHealthCheck) (err HCError) {
 		default:
 			log.Printf("undefined severity level:%s\n%s\n\n", strings.ToUpper(healthCheck.Severity), string(prettyHealthCheck))
 		}
+	} else {
+		log.Printf("%s healthcheck passed\n %s\n\n", strings.ToUpper(healthCheck.Severity), string(prettyHealthCheck))
 	}
 
 	return err
