@@ -14,10 +14,22 @@ import (
 )
 
 var healthchecks []byte
+var host string
+var db string
+var user string
+var pass string
+var uri string
 
 func init() {
+
+	host = os.Getenv("PGHOST")
+	db = os.Getenv("PGDATABASE")
+	user = os.Getenv("PGUSER")
+	pass = os.Getenv("PGPASSWORD")
+	uri = fmt.Sprintf("postgres://%s:%s@%s/%s", user, pass, host, db)
+
 	buf := bytes.NewBuffer(nil)
-	f, _ := os.Open("test.yml")
+	f, _ := os.Open("healthchecksTest.yml")
 	io.Copy(buf, f)
 	f.Close()
 	healthchecks = buf.Bytes()
@@ -42,12 +54,6 @@ func TestUnmarshalFidelityLoss(t *testing.T) {
 
 func TestRunningBasicChecks(t *testing.T) {
 
-	host := os.Getenv("PGHOST")
-	db := os.Getenv("PGDATABASE")
-	user := os.Getenv("PGUSER")
-	pass := os.Getenv("PGPASSWORD")
-	uri := fmt.Sprintf("postgres://%s:%s@%s/%s", user, pass, host, db)
-
 	cxn := database.GetPGConnection(uri)
 	healthChecks := unmarshalHealthChecks(healthchecks)
 	RunHealthChecks(healthChecks, cxn)
@@ -56,14 +62,59 @@ func TestRunningBasicChecks(t *testing.T) {
 
 func TestEvaluatingBasicChecks(t *testing.T) {
 
-	host := os.Getenv("PGHOST")
-	db := os.Getenv("PGDATABASE")
-	user := os.Getenv("PGUSER")
-	pass := os.Getenv("PGPASSWORD")
-	uri := fmt.Sprintf("postgres://%s:%s@%s/%s", user, pass, host, db)
-
 	cxn := database.GetPGConnection(uri)
 	healthChecks := unmarshalHealthChecks(healthchecks)
 	healthChecks = RunHealthChecks(healthChecks, cxn)
-	// EvaluateHealthChecks(healthChecks) // this should fail
+	results, err := EvaluateHealthChecks(healthChecks)
+
+	if err != nil {
+		t.Error("healthchecksTest threw an error")
+	}
+	if len(results) != 3 {
+		t.Error("healthchecks results wrong length")
+	}
+}
+
+func TestEvaluatingErrorsChecks(t *testing.T) {
+
+	cxn := database.GetPGConnection(uri)
+	healthChecks := ReadYamlFromFile("healthchecksErrors.yml")
+	healthChecks = RunHealthChecks(healthChecks, cxn)
+	results, err := EvaluateHealthChecks(healthChecks)
+
+	if err == nil {
+		t.Error("healthchecksErrors did not throw an error")
+	}
+	if len(results) != 2 {
+		t.Error("healthchecks results wrong length")
+	}
+}
+
+func TestEvaluatingFatalChecks(t *testing.T) {
+
+	cxn := database.GetPGConnection(uri)
+	healthChecks := ReadYamlFromFile("healthchecksFatal.yml")
+	healthChecks = RunHealthChecks(healthChecks, cxn)
+	results, err := EvaluateHealthChecks(healthChecks)
+
+	if err == nil {
+		t.Error("healthchecksFatal did not throw an error")
+	}
+	if len(results) != 1 {
+		t.Error("healthchecks results wrong length")
+	}
+}
+
+func TestPreformAllChecks(t *testing.T) {
+
+	cxn := database.GetPGConnection(uri)
+	healthChecks := ReadYamlFromFile("healthchecksAll.yml")
+	results, err := PreformHealthChecks(healthChecks, cxn)
+
+	if err == nil {
+		t.Error("healthchecksAll did not throw an error")
+	}
+	if len(results) != 5 {
+		t.Error("healthchecks results wrong length")
+	}
 }

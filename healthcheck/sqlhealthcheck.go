@@ -1,11 +1,11 @@
 package healthcheck
 
 import (
-	"fmt"
+	"database/sql"
+	"errors"
 	"io/ioutil"
 	"log"
-
-	"database/sql"
+	"strings"
 
 	"gopkg.in/yaml.v2"
 )
@@ -16,7 +16,7 @@ type SQLHealthCheck struct {
 	Expected string `yaml:"expected"`
 	Query    string `yaml:"query"`
 	Title    string `yaml:"title"`
-	Error    bool   `yaml:"error"`
+	Severity string `yaml:"severity"`
 	Passed   bool
 	Actual   string
 }
@@ -29,6 +29,12 @@ type Format struct {
 	Tests        []SQLHealthCheck `yaml:"tests"`
 }
 
+// HCError is a error helper for knowing to exit early on a failed healthcheck
+type HCError struct {
+	Err  string
+	Exit bool
+}
+
 func unmarshalHealthChecks(yamldata []byte) Format {
 
 	var data Format
@@ -37,6 +43,7 @@ func unmarshalHealthChecks(yamldata []byte) Format {
 	if err != nil {
 		log.Fatalf("ERROR: %v", err)
 	}
+
 	// inflate queryfiles
 	return data
 }
@@ -53,33 +60,91 @@ func ReadYamlFromFile(path string) Format {
 // RunHealthChecks executes all health checks in the specified file
 func RunHealthChecks(healthChecks Format, cxn *sql.DB) Format {
 
-	for _, healthCheck := range healthChecks.Tests {
-		fmt.Println(healthCheck.Query)
-		rows, _ := cxn.Query(healthCheck.Query)
-		var answer string
-		rows.Next()
-		rows.Scan(&answer)
-		fmt.Println(answer)
-		healthCheck.Passed = healthCheck.Expected == answer
-		healthCheck.Actual = answer
-
-		fmt.Printf("HEALTH CHECK: %s, Expected: %s, Found:%s\n", healthCheck.Title, healthCheck.Expected, answer)
-
+	for _, test := range healthChecks.Tests {
+		test = RunHealthCheck(test, cxn)
 	}
 	return healthChecks
 }
 
 // EvaluateHealthChecks contains logic for handling the results of RunHealthChecks
-func EvaluateHealthChecks(healthChecks Format) {
-	var errors []SQLHealthCheck
+func EvaluateHealthChecks(healthChecks Format) (results []SQLHealthCheck, err error) {
 
-	for _, healthCheck := range healthChecks.Tests {
-		if !healthCheck.Passed && healthCheck.Error {
-			errors = append(errors, healthCheck)
+	for _, test := range healthChecks.Tests {
+		results = append(results, test)
+		hcErr := EvaluateHealthCheck(test)
+
+		if hcErr.Err != "" {
+			err = errors.New(hcErr.Err)
 		}
+
+		if hcErr.Exit {
+			break
+		}
+
+	}
+	return results, err
+}
+
+// PreformHealthChecks runs and evaluates healthChecks one at a time
+func PreformHealthChecks(healthChecks Format, cxn *sql.DB) (results []SQLHealthCheck, err error) {
+	for _, test := range healthChecks.Tests {
+		test = RunHealthCheck(test, cxn)
+		results = append(results, test)
+		hcErr := EvaluateHealthCheck(test)
+
+		if hcErr.Err != "" {
+			err = errors.New(hcErr.Err)
+		}
+
+		if hcErr.Exit {
+			break
+		}
+
+	}
+	return results, err
+}
+
+// RunHealthCheck runs through a single healthcheck and saves the result
+func RunHealthCheck(healthCheck SQLHealthCheck, cxn *sql.DB) SQLHealthCheck {
+	rows, _ := cxn.Query(healthCheck.Query)
+	var answer string
+	rows.Next()
+	rows.Scan(&answer)
+	healthCheck.Passed = healthCheck.Expected == answer
+	healthCheck.Actual = answer
+	return healthCheck
+}
+
+// EvaluateHealthCheck runs through a single healthcheck and acts on the result
+func EvaluateHealthCheck(healthCheck SQLHealthCheck) (err HCError) {
+
+	prettyHealthCheck, _ := yaml.Marshal(&healthCheck)
+	if !healthCheck.Passed {
+		switch strings.ToLower(healthCheck.Severity) {
+
+		// When Fatal, return early with an error
+		case "fatal":
+			prettyHealthCheck, _ := yaml.Marshal(&healthCheck)
+			log.Printf("FATAL healthcheck failed\nBreaking Away Early\n%s\n\n", string(prettyHealthCheck))
+			err = HCError{"FATAL healthCheck failure", true}
+
+		// When Error, keep running but add an error
+		case "error":
+			prettyHealthCheck, _ := yaml.Marshal(&healthCheck)
+			log.Printf("%s healthcheck failed\n %s\n\n", strings.ToUpper(healthCheck.Severity), string(prettyHealthCheck))
+			err = HCError{"ERROR healthCheck failure", false}
+
+		// When warn or info, print out the result and keep running
+		case "warn", "info":
+			prettyHealthCheck, _ := yaml.Marshal(&healthCheck)
+			log.Printf("%s healthcheck failed\n %s\n\n", strings.ToUpper(healthCheck.Severity), string(prettyHealthCheck))
+		default:
+			log.Printf("undefined severity level:%s\n%s\n\n", strings.ToUpper(healthCheck.Severity), string(prettyHealthCheck))
+		}
+	} else {
+		log.Printf("%s healthcheck passed\n %s\n\n", strings.ToUpper(healthCheck.Severity), string(prettyHealthCheck))
 	}
 
-	if len(errors) > 0 {
-		log.Fatalf("The folllowing health checks failed: %v", errors)
-	}
+	return err
+
 }
