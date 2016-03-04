@@ -61,8 +61,16 @@ func TestGocdPOST(t *testing.T) {
 
 func TestGocdGET(t *testing.T) {
 	fmt.Println("TestGocdGET")
-	_, err := pipelineGET("http://localhost:8153", "test")
+	_, _, err := pipelineGET("http://localhost:8153", "test")
 	if err != nil {
 		t.Error(err)
+	}
+}
+
+func TestExist(t *testing.T) {
+	fmt.Println("TestExist")
+	etag := Exist("http://localhost:8153", "test")
+	if etag == "" {
+		t.Error("test does not exist as a gocd pipeline")
 	}
 }
