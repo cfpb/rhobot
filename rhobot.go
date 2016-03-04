@@ -49,7 +49,7 @@ func main() {
 							Action: func(c *cli.Context) {
 								gocdhost := c.Args()[0]
 								path := c.Args()[1]
-								group := c.Args()[2]
+								group := c.Args().Get(2)
 
 								gocd.Push(gocdhost, path, group)
 
