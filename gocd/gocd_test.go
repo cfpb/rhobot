@@ -7,7 +7,9 @@ import (
 	"io"
 	"os"
 	"reflect"
+	"sort"
 	"testing"
+	"time"
 )
 
 var gocdPipelineConfig []byte
@@ -72,5 +74,41 @@ func TestExist(t *testing.T) {
 	etag := Exist("http://localhost:8153", "test")
 	if etag == "" {
 		t.Error("test does not exist as a gocd pipeline")
+	}
+}
+
+func TestGocdPUT(t *testing.T) {
+	fmt.Println("TestGocdPUT")
+	pipeline, etag, _ := pipelineGET("http://localhost:8153", "test")
+
+	strangeIndex := sort.Search(len(pipeline.EnvironmentVariables), func(index int) bool { return pipeline.EnvironmentVariables[index].Name == "STRANGE" })
+	if strangeIndex == len(pipeline.EnvironmentVariables) {
+		t.Error("STRANGE environment variable not found")
+	}
+
+	//Original Value
+	pipeline, etag, _ = pipelineGET("http://localhost:8153", "test")
+	strangeEnvVarA := pipeline.EnvironmentVariables[strangeIndex]
+	pipeline.EnvironmentVariables[strangeIndex].Value = time.Now().UTC().String()
+	pipeline, _ = pipelineConfigPUT("http://localhost:8153", pipeline, etag)
+	pipeline, etag, _ = pipelineGET("http://localhost:8153", "test")
+
+	pipeline, etag, _ = pipelineGET("http://localhost:8153", "test")
+	strangeEnvVarB := pipeline.EnvironmentVariables[strangeIndex]
+	pipeline.EnvironmentVariables[strangeIndex].Value = strangeEnvVarA.Value
+	pipeline, _ = pipelineConfigPUT("http://localhost:8153", pipeline, etag)
+
+	pipeline, etag, _ = pipelineGET("http://localhost:8153", "test")
+	strangeEnvVarC := pipeline.EnvironmentVariables[strangeIndex]
+	fmt.Printf("STRANGE VALUE A: %+v\n", strangeEnvVarA)
+	fmt.Printf("STRANGE VALUE B: %+v\n", strangeEnvVarB)
+	fmt.Printf("STRANGE VALUE C: %+v\n", strangeEnvVarC)
+
+	if strangeEnvVarA == strangeEnvVarB {
+		t.Error("STRANGE environment variable was not changed")
+	}
+
+	if strangeEnvVarA != strangeEnvVarC {
+		t.Error("STRANGE environment variable was not reset")
 	}
 }
