@@ -7,7 +7,6 @@ import (
 	"io"
 	"os"
 	"reflect"
-	"sort"
 	"testing"
 	"time"
 )
@@ -81,18 +80,26 @@ func TestGocdPUT(t *testing.T) {
 	fmt.Println("TestGocdPUT")
 	pipeline, etag, _ := pipelineGET("http://localhost:8153", "test")
 
-	strangeIndex := sort.Search(len(pipeline.EnvironmentVariables), func(index int) bool { return pipeline.EnvironmentVariables[index].Name == "STRANGE" })
-	if strangeIndex == len(pipeline.EnvironmentVariables) {
-		t.Error("STRANGE environment variable not found")
+	// The Index of the STRANGE Environment Variable could potentially change between update
+	strangeIndex := -1
+	for i, envVar := range pipeline.EnvironmentVariables {
+		if envVar.Name == "STRANGE" {
+			strangeIndex = i
+			break
+		}
+	}
+	if strangeIndex == -1 {
+		fmt.Printf("EnvironmentVariables: %+v\n", pipeline.EnvironmentVariables)
+		t.Fatal("STRANGE environment variable not found")
 	}
 
-	//Original Value
+	//Update Original Value to Time Value
 	pipeline, etag, _ = pipelineGET("http://localhost:8153", "test")
 	strangeEnvVarA := pipeline.EnvironmentVariables[strangeIndex]
 	pipeline.EnvironmentVariables[strangeIndex].Value = time.Now().UTC().String()
 	pipeline, _ = pipelineConfigPUT("http://localhost:8153", pipeline, etag)
-	pipeline, etag, _ = pipelineGET("http://localhost:8153", "test")
 
+	//Update Time Value to Original Value
 	pipeline, etag, _ = pipelineGET("http://localhost:8153", "test")
 	strangeEnvVarB := pipeline.EnvironmentVariables[strangeIndex]
 	pipeline.EnvironmentVariables[strangeIndex].Value = strangeEnvVarA.Value
