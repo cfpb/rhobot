@@ -34,6 +34,11 @@
             "secure": false,
             "name": "PGSSLMODE",
             "value": "require"
+        },
+        {
+            "secure": false,
+            "name": "STRANGE",
+            "value": "STRANGE"
         }
     ],
     "materials": [
