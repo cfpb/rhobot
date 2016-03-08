@@ -2,10 +2,12 @@ All notable changes to this project will be documented in this file.
 We follow the [Semantic Versioning 2.0.0](http://semver.org/) format.
 
 
-## x.y.z - YYYY-MM-DD
+## 0.1.0 - YYYY-MM-DD (unreleased)
 
 ### Added
-- Lorem ipsum dolor sit amet
+- GoCD API interactions for creating or updating a pipeline
+- Healthcheck runner for executing SQL healthchecks on a given database as described in a YAML file.
+- Basic CLI interface
 
 ### Deprecated
 - Nothing.
