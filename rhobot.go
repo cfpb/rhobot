@@ -24,7 +24,7 @@ func main() {
 		{
 			Name:    "run",
 			Aliases: []string{},
-			Usage:   "healthchecks|gocd|tbd",
+			Usage:   "healthchecks|pipeline|tbd",
 			Subcommands: []cli.Command{
 				{
 					Name:  "healthchecks",
@@ -35,6 +35,7 @@ func main() {
 						if len(c.Args()) > 1 {
 							config.SetDBURI(c.Args()[1])
 						}
+						fmt.Println("DB_URI: ", config.DBURI())
 
 						var path string
 						if len(c.Args()) > 0 {
@@ -42,12 +43,10 @@ func main() {
 						} else {
 							fmt.Println("You must provide the path to the healthcheck file.")
 						}
-
-						fmt.Println("DB_URI: ", config.GetDBURI())
 						fmt.Println("PATH: ", path)
 
 						healthChecks := healthcheck.ReadYamlFromFile(path)
-						cxn := database.GetPGConnection(config.GetDBURI())
+						cxn := database.GetPGConnection(config.DBURI())
 						healthcheck.PreformHealthChecks(healthChecks, cxn)
 
 						//TODO: turn results into report
@@ -57,53 +56,70 @@ func main() {
 					Name:    "pipeline",
 					Aliases: []string{},
 					Usage:   "Interact with GoCD pipeline",
-					Flags: []cli.Flag{
-						cli.StringFlag{
-							Name:  "host, h",
-							Value: "",
-							Usage: "host of the GoCD server",
-						},
-					},
 					Subcommands: []cli.Command{
 						{
 							Name:  "push",
 							Usage: "PATH [PIPELINE_GROUP]",
+							Flags: []cli.Flag{
+								cli.StringFlag{
+									Name:  "host",
+									Value: "",
+									Usage: "host of the GoCD server",
+								},
+							},
 							Action: func(c *cli.Context) {
 								if c.String("host") != "" {
-									config.SetGOCDHost(c.String("host"))
+									config.SetGoCDHost(c.String("host"))
 								}
 
-								path := c.Args()[0]
-								group := c.Args().Get(1)
-
-								gocd.Push(config.GetGOCDHost(), path, group)
+								if len(c.Args()) > 0 {
+									path := c.Args()[0]
+									group := c.Args().Get(1)
+									gocd.Push(config.GoCDURL(), path, group)
+								} else {
+									fmt.Println("PATH is required for push command.")
+								}
 							},
 						},
 						{
 							Name:  "pull",
 							Usage: "PATH",
+							Flags: []cli.Flag{
+								cli.StringFlag{
+									Name:  "host",
+									Value: "",
+									Usage: "host of the GoCD server",
+								},
+							},
 							Action: func(c *cli.Context) {
 								if c.String("host") != "" {
-									config.SetGOCDHost(c.String("host"))
+									config.SetGoCDHost(c.String("host"))
 								}
 
 								path := c.Args()[0]
 
-								gocd.Pull(config.GetGOCDHost(), path)
+								gocd.Pull(config.GoCDURL(), path)
 							},
 						},
 						{
 							Name:  "clone",
 							Usage: "PIPELINE_NAME PATH",
+							Flags: []cli.Flag{
+								cli.StringFlag{
+									Name:  "host",
+									Value: "",
+									Usage: "host of the GoCD server",
+								},
+							},
 							Action: func(c *cli.Context) {
 								if c.String("host") != "" {
-									config.SetGOCDHost(c.String("host"))
+									config.SetGoCDHost(c.String("host"))
 								}
 
 								name := c.Args()[0]
 								path := c.Args()[1]
 
-								gocd.Clone(config.GetGOCDHost(), path, name)
+								gocd.Clone(config.GoCDURL(), path, name)
 							},
 						},
 					},

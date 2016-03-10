@@ -28,7 +28,7 @@ func NewDefaultConfig() *Config {
 		pgDatabase:   "postgres",
 		pgUser:       "postgres",
 		pgPassword:   "password",
-		gocdHost:     "localhost",
+		gocdHost:     "http://localhost",
 		gocdPort:     "8153",
 		gocdUser:     "admin",
 		gocdPassword: "password",
@@ -95,8 +95,8 @@ func (config *Config) SetDBURI(dbURI string) {
 	config.pgDatabase = match[4]
 }
 
-// GetDBURI generates a DB URI from the proper configruation options
-func (config *Config) GetDBURI() (dbURI string) {
+// DBURI generates a DB URI from the proper configruation options
+func (config *Config) DBURI() (dbURI string) {
 	dbURI = fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=require",
 		config.pgUser,
 		config.pgPassword,
@@ -107,12 +107,12 @@ func (config *Config) GetDBURI() (dbURI string) {
 	return
 }
 
-// SetGOCDHost sets the host value of the GoCD server
-func (config *Config) SetGOCDHost(host string) {
+// SetGoCDHost sets the host value of the GoCD server
+func (config *Config) SetGoCDHost(host string) {
 	config.gocdHost = host
 }
 
-// GetGOCDHost returns the host of the GoCD server
-func (config *Config) GetGOCDHost() string {
-	return config.gocdHost
+// GoCDURL returns the host of the GoCD server
+func (config *Config) GoCDURL() string {
+	return fmt.Sprintf("%s:%s", config.gocdHost, config.gocdPort)
 }
