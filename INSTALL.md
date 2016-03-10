@@ -1,3 +1,3 @@
 # Installation instructions
 
-Detailed instructions on how to install, configure, and get the project running.
+To build, first setup your Go environmnet as [described here](https://golang.org/doc/code.html).  Then, run `make test` to test, and `make` to build.
