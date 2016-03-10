@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/cfpb/rhobot/config"
 	"github.com/cfpb/rhobot/database"
 	"github.com/cfpb/rhobot/gocd"
 	"github.com/cfpb/rhobot/healthcheck"
@@ -14,8 +15,10 @@ func main() {
 
 	app := cli.NewApp()
 	app.Name = "Rhobot"
-	app.Usage = "Rhobot is your friend."
+	app.Usage = "Rhobot is a database development tool that uses DevOps best practices."
 	app.EnableBashCompletion = true
+
+	config := config.NewConfig()
 
 	app.Commands = []cli.Command{
 		{
@@ -25,55 +28,82 @@ func main() {
 			Subcommands: []cli.Command{
 				{
 					Name:  "healthchecks",
-					Usage: "[database uri] [path to healthcheck file]",
+					Usage: "HEALTHCHECK_FILE [DATABASE_URI]",
 					Action: func(c *cli.Context) {
-						dburi := c.Args()[0]
-						path := c.Args()[1]
-						fmt.Println("DB_URI: ", dburi)
+
+						// The path argument is required, but URI is optional
+						if len(c.Args()) > 1 {
+							config.SetDBURI(c.Args()[1])
+						}
+
+						var path string
+						if len(c.Args()) > 0 {
+							path = c.Args()[0]
+						} else {
+							fmt.Println("You must provide the path to the healthcheck file.")
+						}
+
+						fmt.Println("DB_URI: ", config.GetDBURI())
 						fmt.Println("PATH: ", path)
 
 						healthChecks := healthcheck.ReadYamlFromFile(path)
-						cxn := database.GetPGConnection(dburi)
+						cxn := database.GetPGConnection(config.GetDBURI())
 						healthcheck.PreformHealthChecks(healthChecks, cxn)
+
 						//TODO: turn results into report
 					},
 				},
 				{
-					Name:    "gocd",
+					Name:    "pipeline",
 					Aliases: []string{},
 					Usage:   "Interact with GoCD pipeline",
+					Flags: []cli.Flag{
+						cli.StringFlag{
+							Name:  "host, h",
+							Value: "",
+							Usage: "host of the GoCD server",
+						},
+					},
 					Subcommands: []cli.Command{
 						{
 							Name:  "push",
-							Usage: "[gocd host] [path to pipeline config] [pipeline group]",
+							Usage: "PATH [PIPELINE_GROUP]",
 							Action: func(c *cli.Context) {
-								gocdhost := c.Args()[0]
-								path := c.Args()[1]
-								group := c.Args().Get(2)
+								if c.String("host") != "" {
+									config.SetGOCDHost(c.String("host"))
+								}
 
-								gocd.Push(gocdhost, path, group)
+								path := c.Args()[0]
+								group := c.Args().Get(1)
 
+								gocd.Push(config.GetGOCDHost(), path, group)
 							},
 						},
 						{
 							Name:  "pull",
-							Usage: "[gocd host] [path to pipeline config]",
+							Usage: "PATH",
 							Action: func(c *cli.Context) {
-								gocdhost := c.Args()[0]
-								path := c.Args()[1]
+								if c.String("host") != "" {
+									config.SetGOCDHost(c.String("host"))
+								}
 
-								gocd.Pull(gocdhost, path)
+								path := c.Args()[0]
+
+								gocd.Pull(config.GetGOCDHost(), path)
 							},
 						},
 						{
 							Name:  "clone",
-							Usage: "[gocd host] [path to pipeline config] [pipeline name]",
+							Usage: "PIPELINE_NAME PATH",
 							Action: func(c *cli.Context) {
-								gocdhost := c.Args()[0]
-								path := c.Args()[1]
-								name := c.Args()[2]
+								if c.String("host") != "" {
+									config.SetGOCDHost(c.String("host"))
+								}
 
-								gocd.Clone(gocdhost, path, name)
+								name := c.Args()[0]
+								path := c.Args()[1]
+
+								gocd.Clone(config.GetGOCDHost(), path, name)
 							},
 						},
 					},
