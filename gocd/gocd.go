@@ -130,6 +130,11 @@ func pipelineConfigPUT(gocdURL string, pipeline Pipeline, etag string) (pipeline
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != 200 {
+		err = fmt.Errorf("Bad response code: %d", resp.StatusCode)
+		return pipeline, err
+	}
+
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return pipelineResult, err
@@ -166,10 +171,16 @@ func pipelineConfigPOST(gocdURL string, pipelineConfig PipelineConfig) (pipeline
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := http.DefaultClient.Do(req)
+
 	if err != nil {
 		return pipeline, err
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		err = fmt.Errorf("Bad response code: %d", resp.StatusCode)
+		return pipeline, err
+	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -206,6 +217,11 @@ func pipelineGET(gocdURL string, pipelineName string) (pipeline Pipeline, etag s
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != 200 {
+		err = fmt.Errorf("Bad response code: %d", resp.StatusCode)
+		return pipeline, etag, err
+  }
+	
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return pipeline, etag, err

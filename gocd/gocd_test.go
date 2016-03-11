@@ -12,6 +12,9 @@ import (
 )
 
 var gocdPipelineConfig []byte
+var gocdHost string
+var gocdPort string
+var gocdURL string
 
 func init() {
 	buf := bytes.NewBuffer(nil)
@@ -19,6 +22,18 @@ func init() {
 	io.Copy(buf, f)
 	f.Close()
 	gocdPipelineConfig = buf.Bytes()
+
+	gocdHost = os.Getenv("GOCD_HOST")
+	if gocdHost == "" {
+		gocdHost = "http://localhost"
+	}
+
+	gocdPort = os.Getenv("GOCD_PORT")
+  if gocdPort == "" {
+	  gocdPort = "8153"
+  }
+
+	gocdURL = fmt.Sprintf("%s:%s", gocdHost, gocdPort)
 }
 
 func TestMarshalJSONHAL(t *testing.T) {
@@ -54,7 +69,7 @@ func TestGocdPOST(t *testing.T) {
 	fmt.Println("TestGocdPOST")
 	pipeline, _ := ReadPipelineJSONFromFile("./test.json")
 	pipelineConfig := PipelineConfig{"Dev", pipeline}
-	_, err := pipelineConfigPOST("http://localhost:8153", pipelineConfig)
+	_, err := pipelineConfigPOST(gocdURL, pipelineConfig)
 	if err != nil {
 		t.Error(err)
 	}
@@ -62,7 +77,7 @@ func TestGocdPOST(t *testing.T) {
 
 func TestGocdGET(t *testing.T) {
 	fmt.Println("TestGocdGET")
-	_, _, err := pipelineGET("http://localhost:8153", "test")
+	_, _, err := pipelineGET(gocdURL, "test")
 	if err != nil {
 		t.Error(err)
 	}
@@ -70,7 +85,7 @@ func TestGocdGET(t *testing.T) {
 
 func TestExist(t *testing.T) {
 	fmt.Println("TestExist")
-	etag := Exist("http://localhost:8153", "test")
+	etag := Exist(gocdURL, "test")
 	if etag == "" {
 		t.Error("test does not exist as a gocd pipeline")
 	}
@@ -78,7 +93,7 @@ func TestExist(t *testing.T) {
 
 func TestGocdPUT(t *testing.T) {
 	fmt.Println("TestGocdPUT")
-	pipeline, etag, _ := pipelineGET("http://localhost:8153", "test")
+	pipeline, etag, _ := pipelineGET(gocdURL, "test")
 
 	// The Index of the STRANGE Environment Variable could potentially change between update
 	strangeIndex := -1
@@ -94,18 +109,18 @@ func TestGocdPUT(t *testing.T) {
 	}
 
 	//Update Original Value to Time Value
-	pipeline, etag, _ = pipelineGET("http://localhost:8153", "test")
+	pipeline, etag, _ = pipelineGET(gocdURL, "test")
 	strangeEnvVarA := pipeline.EnvironmentVariables[strangeIndex]
 	pipeline.EnvironmentVariables[strangeIndex].Value = time.Now().UTC().String()
-	pipeline, _ = pipelineConfigPUT("http://localhost:8153", pipeline, etag)
+	pipeline, _ = pipelineConfigPUT(gocdURL, pipeline, etag)
 
 	//Update Time Value to Original Value
-	pipeline, etag, _ = pipelineGET("http://localhost:8153", "test")
+	pipeline, etag, _ = pipelineGET(gocdURL, "test")
 	strangeEnvVarB := pipeline.EnvironmentVariables[strangeIndex]
 	pipeline.EnvironmentVariables[strangeIndex].Value = strangeEnvVarA.Value
-	pipeline, _ = pipelineConfigPUT("http://localhost:8153", pipeline, etag)
+	pipeline, _ = pipelineConfigPUT(gocdURL, pipeline, etag)
 
-	pipeline, etag, _ = pipelineGET("http://localhost:8153", "test")
+	pipeline, etag, _ = pipelineGET(gocdURL, "test")
 	strangeEnvVarC := pipeline.EnvironmentVariables[strangeIndex]
 	fmt.Printf("STRANGE VALUE A: %+v\n", strangeEnvVarA)
 	fmt.Printf("STRANGE VALUE B: %+v\n", strangeEnvVarB)

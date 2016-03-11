@@ -106,10 +106,17 @@ func PreformHealthChecks(healthChecks Format, cxn *sql.DB) (results []SQLHealthC
 
 // RunHealthCheck runs through a single healthcheck and saves the result
 func RunHealthCheck(healthCheck SQLHealthCheck, cxn *sql.DB) SQLHealthCheck {
-	rows, _ := cxn.Query(healthCheck.Query)
-	var answer string
+	answer := ""
+
+	rows, err := cxn.Query(healthCheck.Query)
+
+	if err != nil {
+		log.Fatalf("Error: %v", err)
+	}
+
 	rows.Next()
 	rows.Scan(&answer)
+
 	healthCheck.Passed = healthCheck.Expected == answer
 	healthCheck.Actual = answer
 	return healthCheck
