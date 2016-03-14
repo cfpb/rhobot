@@ -155,3 +155,32 @@ func EvaluateHealthCheck(healthCheck SQLHealthCheck) (err HCError) {
 	return err
 
 }
+
+//Implementation of Reportable Element
+
+var HealthCheckReportHeaders = []string{"Title", "Query", "Passed", "Expected", "Actual"}
+
+func (hcr SQLHealthCheck) GetHeaders() []string {
+	return HealthCheckReportHeaders[0:]
+}
+
+func (hcr SQLHealthCheck) GetValue(key string) string {
+	//return key+"_val"
+
+	switch key {
+	case HealthCheckReportHeaders[0]:
+		return hcr.Title
+	case HealthCheckReportHeaders[1]:
+		return hcr.Query
+	case HealthCheckReportHeaders[2]:
+		if hcr.Passed {
+			return "SUCCESS"
+		}
+		return "FAIL"
+	case HealthCheckReportHeaders[3]:
+		return hcr.Expected
+	case HealthCheckReportHeaders[4]:
+		return hcr.Actual
+	}
+	return ""
+}

@@ -45,7 +45,7 @@ func TestPongo2Report(t *testing.T) {
 	var prr ReportRunner
 
 	re = SimpleRE{[]string{"Some", "Thing"}}
-	prr = Pongo2ReportRunner{"./simpleTemplate.html"}
+	prr = Pongo2ReportRunner{"./TemplateSimple.html"}
 
 	elements := []ReportableElement{re, re}
 	metadata := map[string]interface{}{"test": "pongo2"}
@@ -58,3 +58,5 @@ func TestPongo2Report(t *testing.T) {
 	}
 
 }
+
+

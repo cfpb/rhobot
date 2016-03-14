@@ -12,14 +12,14 @@ type ReportRunner interface {
 }
 
 type ReportSet struct {
-	elements []ReportableElement
-	metadata map[string]interface{}
+	Elements []ReportableElement
+	Metadata map[string]interface{}
 }
 
 func (rs *ReportSet) GetReportMap() map[string]interface{} {
 
-	elements := make([]map[string]interface{}, len(rs.elements))
-	for i, element := range rs.elements {
+	elements := make([]map[string]interface{}, len(rs.Elements))
+	for i, element := range rs.Elements {
 		elementMap := make(map[string]interface{})
 		for _, header := range element.GetHeaders() {
 			elementMap[header] = element.GetValue(header)
@@ -29,14 +29,14 @@ func (rs *ReportSet) GetReportMap() map[string]interface{} {
 
 	reportSetMap := make(map[string]interface{})
 	reportSetMap["elements"] = elements
-	reportSetMap["metadata"] = rs.metadata
+	reportSetMap["metadata"] = rs.Metadata
 	return reportSetMap
 }
 
 func (rs *ReportSet) GetElementArray() []ReportableElement {
-	return rs.elements
+	return rs.Elements
 }
 
 func (rs *ReportSet) GetMetadata() map[string]interface{} {
-	return rs.metadata
+	return rs.Metadata
 }

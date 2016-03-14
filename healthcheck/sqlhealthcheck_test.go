@@ -7,10 +7,12 @@ import (
 	"os"
 	"reflect"
 	"testing"
+	"time"
 
 	"gopkg.in/yaml.v2"
 
 	"github.com/cfpb/rhobot/database"
+	"github.com/cfpb/rhobot/report"
 )
 
 var healthchecks []byte
@@ -117,4 +119,45 @@ func TestPreformAllChecks(t *testing.T) {
 	if len(results) != 5 {
 		t.Error("healthchecks results wrong length")
 	}
+}
+
+func TestSQLHealthCheckReport(t *testing.T) {
+    var hcr report.ReportableElement
+
+    hcr = SQLHealthCheck{"true","select (select count(1) from information_schema.tables) > 0;","basic test","FATAL",true,"t"}
+    for _, header := range hcr.GetHeaders(){
+        fmt.Printf("%s : %s\n", header, hcr.GetValue(header))
+    }
+
+    if hcr.GetHeaders() == nil {
+		t.Error("no headers in report ReportableElement")
+	}
+
+}
+
+func TestHealthcheckPongo2Report(t *testing.T) {
+	fmt.Println("TestHealthcheckPongo2Report")
+	var rePass, reFail report.ReportableElement
+	var rs report.ReportSet
+	var prr report.ReportRunner
+
+	rePass = SQLHealthCheck{"true","select (select count(1) from information_schema.tables) > 0;","basic test","FATAL",true,"t"}
+	reFail = SQLHealthCheck{"true","select (select count(1) from information_schema.tables) < 0;","basic test","FATAL",false,"f"}
+	prr = report.Pongo2ReportRunner{"./TemplateHealthcheck.html"}
+
+	elements := []report.ReportableElement{rePass, reFail}
+	metadata := map[string]interface{}{
+	    "name":"TestHealthcheckPongo2Report",
+        "db_name":"testdb",
+        "footer":"Footer",
+        "timestamp":time.Now().UTC().String(),
+    }
+	rs = report.ReportSet{elements, metadata}
+
+	err := prr.WriteReport(rs)
+
+	if err != nil {
+		t.Fatalf("error writing report\n%s", err)
+	}
+
 }
