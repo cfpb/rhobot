@@ -121,7 +121,8 @@ func TestPreformAllChecks(t *testing.T) {
 	}
 }
 
-func TestSQLHealthCheckReport(t *testing.T) {
+func TestSQLHealthCheckReportableElement(t *testing.T) {
+    fmt.Println("TestSQLHealthCheckReportableElement")
     var hcr report.ReportableElement
 
     hcr = SQLHealthCheck{"true","select (select count(1) from information_schema.tables) > 0;","basic test","FATAL",true,"t"}
