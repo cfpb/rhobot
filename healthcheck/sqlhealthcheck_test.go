@@ -139,8 +139,8 @@ func TestSQLHealthCheckReportableElement(t *testing.T) {
 func TestHealthcheckPongo2Report(t *testing.T) {
 	fmt.Println("TestHealthcheckPongo2Report")
 	var rePass, reFail report.ReportableElement
-	var rs report.ReportSet
-	var prr report.ReportRunner
+	var rs report.Set
+	var prr report.Runner
 
 	rePass = SQLHealthCheck{"true", "select (select count(1) from information_schema.tables) > 0;", "basic test", "FATAL", true, "t"}
 	reFail = SQLHealthCheck{"true", "select (select count(1) from information_schema.tables) < 0;", "basic test", "FATAL", false, "f"}
@@ -153,7 +153,7 @@ func TestHealthcheckPongo2Report(t *testing.T) {
 		"footer":    "Footer",
 		"timestamp": time.Now().UTC().String(),
 	}
-	rs = report.ReportSet{elements, metadata}
+	rs = report.Set{elements, metadata}
 
 	reader, err := prr.ReportReader(rs)
 	report.PrintReport(reader)

@@ -1,15 +1,17 @@
 package report
 
 import (
-	"encoding/json"
 	"bytes"
+	"encoding/json"
 	"io"
 )
 
+//JSONReportRunner initilization should contain any variables used for report
 type JSONReportRunner struct {
 }
 
-func (jrr JSONReportRunner) ReportReader(reportSet ReportSet) (io.Reader,error) {
+//ReportReader Implementation for ReportRunner
+func (jrr JSONReportRunner) ReportReader(reportSet Set) (io.Reader, error) {
 
 	reportJSON, err := json.MarshalIndent(reportSet.GetReportMap(), "", "    ")
 	if err != nil {

@@ -1,16 +1,19 @@
 package report
 
 import (
-    "bytes"
-	"github.com/flosch/pongo2"
+	"bytes"
 	"io"
+
+	"github.com/flosch/pongo2"
 )
 
+//Pongo2ReportRunner initilization with template path
 type Pongo2ReportRunner struct {
 	TemplateFilePath string
 }
 
-func (p2rr Pongo2ReportRunner) ReportReader(reportSet ReportSet) (io.Reader,error)  {
+//ReportReader Implementation for ReportRunner
+func (p2rr Pongo2ReportRunner) ReportReader(reportSet Set) (io.Reader, error) {
 
 	var tplExample = pongo2.Must(pongo2.FromFile(p2rr.TemplateFilePath))
 	reportBytes, err := tplExample.ExecuteBytes(reportSet.GetReportMap())
