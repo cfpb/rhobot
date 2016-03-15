@@ -122,15 +122,15 @@ func TestPreformAllChecks(t *testing.T) {
 }
 
 func TestSQLHealthCheckReportableElement(t *testing.T) {
-    fmt.Println("TestSQLHealthCheckReportableElement")
-    var hcr report.ReportableElement
+	fmt.Println("TestSQLHealthCheckReportableElement")
+	var hcr report.ReportableElement
 
-    hcr = SQLHealthCheck{"true","select (select count(1) from information_schema.tables) > 0;","basic test","FATAL",true,"t"}
-    for _, header := range hcr.GetHeaders(){
-        fmt.Printf("%s : %s\n", header, hcr.GetValue(header))
-    }
+	hcr = SQLHealthCheck{"true", "select (select count(1) from information_schema.tables) > 0;", "basic test", "FATAL", true, "t"}
+	for _, header := range hcr.GetHeaders() {
+		fmt.Printf("%s : %s\n", header, hcr.GetValue(header))
+	}
 
-    if hcr.GetHeaders() == nil {
+	if hcr.GetHeaders() == nil {
 		t.Error("no headers in report ReportableElement")
 	}
 
@@ -142,20 +142,21 @@ func TestHealthcheckPongo2Report(t *testing.T) {
 	var rs report.ReportSet
 	var prr report.ReportRunner
 
-	rePass = SQLHealthCheck{"true","select (select count(1) from information_schema.tables) > 0;","basic test","FATAL",true,"t"}
-	reFail = SQLHealthCheck{"true","select (select count(1) from information_schema.tables) < 0;","basic test","FATAL",false,"f"}
+	rePass = SQLHealthCheck{"true", "select (select count(1) from information_schema.tables) > 0;", "basic test", "FATAL", true, "t"}
+	reFail = SQLHealthCheck{"true", "select (select count(1) from information_schema.tables) < 0;", "basic test", "FATAL", false, "f"}
 	prr = report.Pongo2ReportRunner{"./TemplateHealthcheck.html"}
 
 	elements := []report.ReportableElement{rePass, reFail}
 	metadata := map[string]interface{}{
-	    "name":"TestHealthcheckPongo2Report",
-        "db_name":"testdb",
-        "footer":"Footer",
-        "timestamp":time.Now().UTC().String(),
-    }
+		"name":      "TestHealthcheckPongo2Report",
+		"db_name":   "testdb",
+		"footer":    "Footer",
+		"timestamp": time.Now().UTC().String(),
+	}
 	rs = report.ReportSet{elements, metadata}
 
-	err := prr.WriteReport(rs)
+	reader, err := prr.ReportReader(rs)
+	report.PrintReport(reader)
 
 	if err != nil {
 		t.Fatalf("error writing report\n%s", err)
