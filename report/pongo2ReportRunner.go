@@ -1,21 +1,23 @@
 package report
 
 import (
-	"fmt"
+    "bytes"
 	"github.com/flosch/pongo2"
+	"io"
 )
 
 type Pongo2ReportRunner struct {
 	TemplateFilePath string
 }
 
-func (p2rr Pongo2ReportRunner) WriteReport(reportSet ReportSet) error {
+func (p2rr Pongo2ReportRunner) ReportReader(reportSet ReportSet) (io.Reader,error)  {
 
 	var tplExample = pongo2.Must(pongo2.FromFile(p2rr.TemplateFilePath))
-	out, err := tplExample.Execute(reportSet.GetReportMap())
+	reportBytes, err := tplExample.ExecuteBytes(reportSet.GetReportMap())
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(out)
-	return nil
+	r := bytes.NewReader(reportBytes)
+	//fmt.Println(string(reportBytes))
+	return r, err
 }

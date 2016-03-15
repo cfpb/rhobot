@@ -24,14 +24,14 @@ func TestJSONReport(t *testing.T) {
 	var jrr ReportRunner
 
 	re = SimpleRE{[]string{"Some", "Thing"}}
-	jrr = JSONReportRunner{"./something.json"}
+	jrr = JSONReportRunner{}
 
 	elements := []ReportableElement{re, re}
 	metadata := map[string]interface{}{"test": "json"}
 	rs = ReportSet{elements, metadata}
 
-	err := jrr.WriteReport(rs)
-
+	reader, err := jrr.ReportReader(rs)
+    PrintReport(reader)
 	if err != nil {
 		t.Fatalf("error writing report\n%s", err)
 	}
@@ -51,8 +51,8 @@ func TestPongo2Report(t *testing.T) {
 	metadata := map[string]interface{}{"test": "pongo2"}
 	rs = ReportSet{elements, metadata}
 
-	err := prr.WriteReport(rs)
-
+	reader, err := prr.ReportReader(rs)
+    PrintReport(reader)
 	if err != nil {
 		t.Fatalf("error writing report\n%s", err)
 	}

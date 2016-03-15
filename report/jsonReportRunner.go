@@ -2,19 +2,20 @@ package report
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"bytes"
+	"io"
 )
 
 type JSONReportRunner struct {
-	OutputFilePath string
 }
 
-func (jrr JSONReportRunner) WriteReport(reportSet ReportSet) error {
+func (jrr JSONReportRunner) ReportReader(reportSet ReportSet) (io.Reader,error) {
 
 	reportJSON, err := json.MarshalIndent(reportSet.GetReportMap(), "", "    ")
 	if err != nil {
-		return err
+		panic(err)
 	}
-	err = ioutil.WriteFile(jrr.OutputFilePath, reportJSON, 0666)
-	return err
+	r := bytes.NewReader(reportJSON)
+	//err = ioutil.WriteFile(jrr.OutputFilePath, reportJSON, 0666)
+	return r, err
 }
