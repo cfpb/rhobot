@@ -123,7 +123,7 @@ func TestPreformAllChecks(t *testing.T) {
 
 func TestSQLHealthCheckReportableElement(t *testing.T) {
 	fmt.Println("TestSQLHealthCheckReportableElement")
-	var hcr report.ReportableElement
+	var hcr report.Element
 
 	hcr = SQLHealthCheck{"true", "select (select count(1) from information_schema.tables) > 0;", "basic test", "FATAL", true, "t"}
 	for _, header := range hcr.GetHeaders() {
@@ -138,15 +138,17 @@ func TestSQLHealthCheckReportableElement(t *testing.T) {
 
 func TestHealthcheckPongo2Report(t *testing.T) {
 	fmt.Println("TestHealthcheckPongo2Report")
-	var rePass, reFail report.ReportableElement
+	var rePass, reFail report.Element
 	var rs report.Set
 	var prr report.Runner
+	var phr report.Handler
 
 	rePass = SQLHealthCheck{"true", "select (select count(1) from information_schema.tables) > 0;", "basic test", "FATAL", true, "t"}
 	reFail = SQLHealthCheck{"true", "select (select count(1) from information_schema.tables) < 0;", "basic test", "FATAL", false, "f"}
 	prr = report.Pongo2ReportRunner{"./TemplateHealthcheck.html"}
+	phr = report.PrintHandler{}
 
-	elements := []report.ReportableElement{rePass, reFail}
+	elements := []report.Element{rePass, reFail}
 	metadata := map[string]interface{}{
 		"name":      "TestHealthcheckPongo2Report",
 		"db_name":   "testdb",
@@ -156,8 +158,7 @@ func TestHealthcheckPongo2Report(t *testing.T) {
 	rs = report.Set{elements, metadata}
 
 	reader, err := prr.ReportReader(rs)
-	report.PrintReport(reader)
-
+	err = phr.HandleReport(reader)
 	if err != nil {
 		t.Fatalf("error writing report\n%s", err)
 	}

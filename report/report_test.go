@@ -19,19 +19,21 @@ func (sre SimpleRE) GetValue(key string) string {
 
 func TestJSONReport(t *testing.T) {
 	fmt.Println("TestJSONReport")
-	var re ReportableElement
+	var re Element
 	var rs Set
 	var jrr Runner
+	var phr Handler
 
 	re = SimpleRE{[]string{"Some", "Thing"}}
 	jrr = JSONReportRunner{}
+	phr = PrintHandler{}
 
-	elements := []ReportableElement{re, re}
+	elements := []Element{re, re}
 	metadata := map[string]interface{}{"test": "json"}
 	rs = Set{elements, metadata}
 
 	reader, err := jrr.ReportReader(rs)
-	PrintReport(reader)
+	err = phr.HandleReport(reader)
 	if err != nil {
 		t.Fatalf("error writing report\n%s", err)
 	}
@@ -40,19 +42,21 @@ func TestJSONReport(t *testing.T) {
 
 func TestPongo2Report(t *testing.T) {
 	fmt.Println("TestPongo2Report")
-	var re ReportableElement
+	var re Element
 	var rs Set
 	var prr Runner
+	var phr Handler
 
 	re = SimpleRE{[]string{"Some", "Thing"}}
 	prr = Pongo2ReportRunner{"./TemplateSimple.html"}
+	phr = PrintHandler{}
 
-	elements := []ReportableElement{re, re}
+	elements := []Element{re, re}
 	metadata := map[string]interface{}{"test": "pongo2"}
 	rs = Set{elements, metadata}
 
 	reader, err := prr.ReportReader(rs)
-	PrintReport(reader)
+	err = phr.HandleReport(reader)
 	if err != nil {
 		t.Fatalf("error writing report\n%s", err)
 	}

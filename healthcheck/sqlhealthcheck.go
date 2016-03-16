@@ -156,17 +156,17 @@ func EvaluateHealthCheck(healthCheck SQLHealthCheck) (err HCError) {
 
 }
 
-//Implementation of Reportable Element
+//Implementation of report.Element
 
 //HealthCheckReportHeaders headers used for GetHeaders
 var HealthCheckReportHeaders = []string{"Title", "Query", "Passed", "Expected", "Actual"}
 
-//GetHeaders Implementation for ReportableElement
+//GetHeaders Implementation for report.Element
 func (hcr SQLHealthCheck) GetHeaders() []string {
 	return HealthCheckReportHeaders[0:]
 }
 
-//GetValue Implementation for ReportableElement
+//GetValue Implementation for report.Element
 func (hcr SQLHealthCheck) GetValue(key string) string {
 	//return key+"_val"
 

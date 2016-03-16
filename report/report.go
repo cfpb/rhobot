@@ -1,13 +1,11 @@
 package report
 
 import (
-	"bufio"
-	"fmt"
 	"io"
 )
 
-//ReportableElement interface for anything that is contained in a report
-type ReportableElement interface {
+//Element interface for anything that is contained in a report
+type Element interface {
 	GetHeaders() []string
 	GetValue(key string) string
 }
@@ -19,7 +17,7 @@ type Runner interface {
 
 //Set structure for containing elements and metadata for a report
 type Set struct {
-	Elements []ReportableElement
+	Elements []Element
 	Metadata map[string]interface{}
 }
 
@@ -42,7 +40,7 @@ func (rs *Set) GetReportMap() map[string]interface{} {
 }
 
 //GetElementArray getter for Elements
-func (rs *Set) GetElementArray() []ReportableElement {
+func (rs *Set) GetElementArray() []Element {
 	return rs.Elements
 }
 
@@ -51,14 +49,7 @@ func (rs *Set) GetMetadata() map[string]interface{} {
 	return rs.Metadata
 }
 
-//PrintReport consumes ReportReader output, prints to stdout
-func PrintReport(reader io.Reader) {
-	scanner := bufio.NewScanner(reader)
-	for scanner.Scan() {
-		fmt.Printf("%s\n", scanner.Text())
-	}
-	if err := scanner.Err(); err != nil {
-		//print error to logger
-		//fmt.Fprintln(os.Stderr, "There was an error with the scanner in attached container", err)
-	}
+//Handler interface for anything able to consume a report
+type Handler interface {
+	HandleReport(io.Reader) error
 }
