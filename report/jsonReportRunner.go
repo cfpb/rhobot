@@ -6,11 +6,11 @@ import (
 	"io"
 )
 
-//JSONReportRunner initilization should contain any variables used for report
+// JSONReportRunner initilization should contain any variables used for report
 type JSONReportRunner struct {
 }
 
-//ReportReader Implementation for ReportRunner
+// ReportReader Implementation for ReportRunner
 func (jrr JSONReportRunner) ReportReader(reportSet Set) (io.Reader, error) {
 
 	reportJSON, err := json.MarshalIndent(reportSet.GetReportMap(), "", "    ")
@@ -18,6 +18,5 @@ func (jrr JSONReportRunner) ReportReader(reportSet Set) (io.Reader, error) {
 		panic(err)
 	}
 	r := bytes.NewReader(reportJSON)
-	//err = ioutil.WriteFile(jrr.OutputFilePath, reportJSON, 0666)
 	return r, err
 }
