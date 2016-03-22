@@ -53,22 +53,28 @@ func main() {
 					},
 					Action: func(c *cli.Context) {
 
-						fmt.Println("ARGS: ", c.Args())
+						// variables to be populated by cli args
+						var healthcheckPath string
+						var reportPath string
 
 						if c.String("dburi") != "" {
 							config.SetDBURI(c.String("dburi"))
 						}
-						fmt.Println("DB_URI: ", config.DBURI())
 
-						var path string
 						if c.Args().Get(0) != "" {
-							path = c.Args().Get(0)
+							healthcheckPath = c.Args().Get(0)
 						} else {
 							fmt.Println("You must provide the path to the healthcheck file.")
 						}
-						fmt.Println("PATH: ", path)
 
-						healthChecks := healthcheck.ReadYamlFromFile(path)
+						if c.String("report") != "" {
+							reportPath = c.String("report")
+						}
+
+						fmt.Println("DB_URI: ", config.DBURI())
+						fmt.Println("PATH: ", healthcheckPath)
+
+						healthChecks := healthcheck.ReadYamlFromFile(healthcheckPath)
 						cxn := database.GetPGConnection(config.DBURI())
 						results, _ := healthcheck.PreformHealthChecks(healthChecks, cxn)
 						metadata := map[string]interface{}{
@@ -83,9 +89,9 @@ func main() {
 							elements = append(elements, val)
 						}
 
-						if c.String("report") != "" {
+						if reportPath != "" {
 							prr := report.NewPongo2ReportRunnerFromString(healthcheck.TemplateHealthcheck)
-							fhr := report.FileHandler{Filename: c.String("report")}
+							fhr := report.FileHandler{Filename: reportPath}
 							rs := report.Set{Elements: elements, Metadata: metadata}
 							reader, _ := prr.ReportReader(rs)
 							_ = fhr.HandleReport(reader)
