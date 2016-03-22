@@ -22,6 +22,12 @@ func main() {
 
 	config := config.NewConfig()
 
+	gocdHostFlag := cli.StringFlag{
+		Name:  "host",
+		Value: "",
+		Usage: "host of the GoCD server",
+	}
+
 	app.Commands = []cli.Command{
 		{
 			Name:    "run",
@@ -64,8 +70,8 @@ func main() {
 						}
 
 						prr := report.NewPongo2ReportRunnerFromString(healthcheck.TemplateHealthcheck)
-						fhr := report.FileHandler{"healthcheckResult.html"}
-						rs := report.Set{elements, metadata}
+						fhr := report.FileHandler{Filename: "healthcheckResult.html"}
+						rs := report.Set{Elements: elements, Metadata: metadata}
 						reader, _ := prr.ReportReader(rs)
 						_ = fhr.HandleReport(reader)
 
@@ -80,11 +86,7 @@ func main() {
 							Name:  "push",
 							Usage: "PATH [PIPELINE_GROUP]",
 							Flags: []cli.Flag{
-								cli.StringFlag{
-									Name:  "host",
-									Value: "",
-									Usage: "host of the GoCD server",
-								},
+								gocdHostFlag,
 							},
 							Action: func(c *cli.Context) {
 								if c.String("host") != "" {
@@ -104,11 +106,7 @@ func main() {
 							Name:  "pull",
 							Usage: "PATH",
 							Flags: []cli.Flag{
-								cli.StringFlag{
-									Name:  "host",
-									Value: "",
-									Usage: "host of the GoCD server",
-								},
+								gocdHostFlag,
 							},
 							Action: func(c *cli.Context) {
 								if c.String("host") != "" {
@@ -124,11 +122,7 @@ func main() {
 							Name:  "clone",
 							Usage: "PIPELINE_NAME PATH",
 							Flags: []cli.Flag{
-								cli.StringFlag{
-									Name:  "host",
-									Value: "",
-									Usage: "host of the GoCD server",
-								},
+								gocdHostFlag,
 							},
 							Action: func(c *cli.Context) {
 								if c.String("host") != "" {
