@@ -27,6 +27,16 @@ func main() {
 		Value: "",
 		Usage: "host of the GoCD server",
 	}
+	reportFileFlag := cli.StringFlag{
+		Name:  "report",
+		Value: "",
+		Usage: "path to the healthcheck report",
+	}
+	dburiFlag := cli.StringFlag{
+		Name:  "dburi",
+		Value: "",
+		Usage: "database uri postgres://user:password@host:port/database",
+	}
 
 	app.Commands = []cli.Command{
 		{
@@ -36,18 +46,23 @@ func main() {
 			Subcommands: []cli.Command{
 				{
 					Name:  "healthchecks",
-					Usage: "HEALTHCHECK_FILE [DATABASE_URI]",
+					Usage: "HEALTHCHECK_FILE [--dburi DATABASE_URI] [--report REPORT_FILE]",
+					Flags: []cli.Flag{
+						reportFileFlag,
+						dburiFlag,
+					},
 					Action: func(c *cli.Context) {
 
-						// The path argument is required, but URI is optional
-						if len(c.Args()) > 1 {
-							config.SetDBURI(c.Args()[1])
+						fmt.Println("ARGS: ", c.Args())
+
+						if c.String("dburi") != "" {
+							config.SetDBURI(c.String("dburi"))
 						}
 						fmt.Println("DB_URI: ", config.DBURI())
 
 						var path string
-						if len(c.Args()) > 0 {
-							path = c.Args()[0]
+						if c.Args().Get(0) != "" {
+							path = c.Args().Get(0)
 						} else {
 							fmt.Println("You must provide the path to the healthcheck file.")
 						}
@@ -56,11 +71,10 @@ func main() {
 						healthChecks := healthcheck.ReadYamlFromFile(path)
 						cxn := database.GetPGConnection(config.DBURI())
 						results, _ := healthcheck.PreformHealthChecks(healthChecks, cxn)
-						footerString := healthcheck.FooterHealthcheck
 						metadata := map[string]interface{}{
 							"name":      healthChecks.Name,
-							"db_name":   config.DBURI(),
-							"footer":    footerString,
+							"db_name":   config.PgDatabase,
+							"footer":    healthcheck.FooterHealthcheck,
 							"timestamp": time.Now().UTC().String(),
 						}
 
@@ -69,11 +83,13 @@ func main() {
 							elements = append(elements, val)
 						}
 
-						prr := report.NewPongo2ReportRunnerFromString(healthcheck.TemplateHealthcheck)
-						fhr := report.FileHandler{Filename: "healthcheckResult.html"}
-						rs := report.Set{Elements: elements, Metadata: metadata}
-						reader, _ := prr.ReportReader(rs)
-						_ = fhr.HandleReport(reader)
+						if c.String("report") != "" {
+							prr := report.NewPongo2ReportRunnerFromString(healthcheck.TemplateHealthcheck)
+							fhr := report.FileHandler{Filename: c.String("report")}
+							rs := report.Set{Elements: elements, Metadata: metadata}
+							reader, _ := prr.ReportReader(rs)
+							_ = fhr.HandleReport(reader)
+						}
 
 					},
 				},
