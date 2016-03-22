@@ -269,8 +269,7 @@ func Pull(gocdURL string, path string) {
 // Exist checks if a pipeline of a given name exist, returns it's etag or an empty string
 func Exist(gocdURL string, name string) (etag string) {
 
-	_, etag, err := pipelineGET(gocdURL, name)
-	check(err)
+	_, etag, _ = pipelineGET(gocdURL, name)
 	return etag
 }
 
