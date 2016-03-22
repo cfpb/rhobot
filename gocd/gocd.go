@@ -220,8 +220,8 @@ func pipelineGET(gocdURL string, pipelineName string) (pipeline Pipeline, etag s
 	if resp.StatusCode != 200 {
 		err = fmt.Errorf("Bad response code: %d", resp.StatusCode)
 		return pipeline, etag, err
-  }
-	
+	}
+
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return pipeline, etag, err

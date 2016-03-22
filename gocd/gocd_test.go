@@ -29,9 +29,9 @@ func init() {
 	}
 
 	gocdPort = os.Getenv("GOCD_PORT")
-  if gocdPort == "" {
-	  gocdPort = "8153"
-  }
+	if gocdPort == "" {
+		gocdPort = "8153"
+	}
 
 	gocdURL = fmt.Sprintf("%s:%s", gocdHost, gocdPort)
 }
