@@ -145,14 +145,14 @@ func TestHealthcheckPongo2Report(t *testing.T) {
 
 	rePass = SQLHealthCheck{"true", "select (select count(1) from information_schema.tables) > 0;", "basic test", "FATAL", true, "t"}
 	reFail = SQLHealthCheck{"true", "select (select count(1) from information_schema.tables) < 0;", "basic test", "FATAL", false, "f"}
-	prr = report.Pongo2ReportRunner{"./TemplateHealthcheck.html"}
+	prr = report.NewPongo2ReportRunnerFromString(TemplateHealthcheck)
 	phr = report.PrintHandler{}
 
 	elements := []report.Element{rePass, reFail}
 	metadata := map[string]interface{}{
 		"name":      "TestHealthcheckPongo2Report",
 		"db_name":   "testdb",
-		"footer":    "Footer",
+		"footer":    FooterHealthcheck,
 		"timestamp": time.Now().UTC().String(),
 	}
 	rs = report.Set{elements, metadata}

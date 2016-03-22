@@ -1,3 +1,7 @@
+package healthcheck
+
+// TemplateHealthcheck pongo2 template for healthchecks
+const TemplateHealthcheck = `
   <h2>{{ metadata.name }} - Running against database "{{ metadata.db_name }}"</h2>
     <table border=1 frame=void rules=rows>
         <tr>
@@ -22,5 +26,17 @@
             </tr>
         {% endfor %}
     </table>
-    {{ metadata.footer }}<br>
+    {{ metadata.footer | safe }}<br>
     {{ metadata.timestamp }}
+
+`
+
+// FooterHealthcheck footer for healthchecks
+const FooterHealthcheck = `
+<p>Thank you,</p>
+  <p>
+  CFPB CR Data-Sharing Team<br>
+  Consumer Financial Protection Bureau
+  </p>
+  <p>Confidentiality Notice: If you received this email by mistake, please notify the sender of the mistake and delete the e-mail and any attachments. An inadvertent disclosure is not intended to waive any privileges.</p>
+`
