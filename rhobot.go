@@ -3,11 +3,13 @@ package main
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/cfpb/rhobot/config"
 	"github.com/cfpb/rhobot/database"
 	"github.com/cfpb/rhobot/gocd"
 	"github.com/cfpb/rhobot/healthcheck"
+	"github.com/cfpb/rhobot/report"
 	"github.com/codegangsta/cli"
 )
 
@@ -47,9 +49,26 @@ func main() {
 
 						healthChecks := healthcheck.ReadYamlFromFile(path)
 						cxn := database.GetPGConnection(config.DBURI())
-						healthcheck.PreformHealthChecks(healthChecks, cxn)
+						results, _ := healthcheck.PreformHealthChecks(healthChecks, cxn)
+						footerString := healthcheck.FooterHealthcheck
+						metadata := map[string]interface{}{
+							"name":      healthChecks.Name,
+							"db_name":   config.DBURI(),
+							"footer":    footerString,
+							"timestamp": time.Now().UTC().String(),
+						}
 
-						//TODO: turn results into report
+						var elements []report.Element
+						for _, val := range results {
+							elements = append(elements, val)
+						}
+
+						prr := report.NewPongo2ReportRunnerFromString(healthcheck.TemplateHealthcheck)
+						fhr := report.FileHandler{"healthcheckResult.html"}
+						rs := report.Set{elements, metadata}
+						reader, _ := prr.ReportReader(rs)
+						_ = fhr.HandleReport(reader)
+
 					},
 				},
 				{
