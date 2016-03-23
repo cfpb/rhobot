@@ -86,14 +86,14 @@ func EvaluateHealthChecks(healthChecks Format) (results []SQLHealthCheck, err er
 }
 
 // PreformHealthChecks runs and evaluates healthChecks one at a time
-func PreformHealthChecks(healthChecks Format, cxn *sql.DB) (results []SQLHealthCheck, err error) {
+func PreformHealthChecks(healthChecks Format, cxn *sql.DB) (results []SQLHealthCheck, errors []HCError) {
 	for _, test := range healthChecks.Tests {
 		test = RunHealthCheck(test, cxn)
 		results = append(results, test)
 		hcErr := EvaluateHealthCheck(test)
 
 		if hcErr.Err != "" {
-			err = errors.New(hcErr.Err)
+			errors = append(errors, hcErr)
 		}
 
 		if hcErr.Exit {
@@ -101,7 +101,7 @@ func PreformHealthChecks(healthChecks Format, cxn *sql.DB) (results []SQLHealthC
 		}
 
 	}
-	return results, err
+	return results, errors
 }
 
 // RunHealthCheck runs through a single healthcheck and saves the result
