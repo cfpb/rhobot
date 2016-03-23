@@ -37,6 +37,11 @@ func main() {
 		Value: "",
 		Usage: "database uri postgres://user:password@host:port/database",
 	}
+	emailListFlag := cli.StringFlag{
+		Name:  "email",
+		Value: "",
+		Usage: "yaml file containing email distribution list",
+	}
 
 	app.Commands = []cli.Command{
 		{
@@ -46,20 +51,18 @@ func main() {
 			Subcommands: []cli.Command{
 				{
 					Name:  "healthchecks",
-					Usage: "HEALTHCHECK_FILE [--dburi DATABASE_URI] [--report REPORT_FILE]",
+					Usage: "HEALTHCHECK_FILE [--dburi DATABASE_URI] [--report REPORT_FILE] [--email DISTRIBUTION_FILE]",
 					Flags: []cli.Flag{
 						reportFileFlag,
 						dburiFlag,
+						emailListFlag,
 					},
 					Action: func(c *cli.Context) {
 
 						// variables to be populated by cli args
 						var healthcheckPath string
 						var reportPath string
-
-						if c.String("dburi") != "" {
-							config.SetDBURI(c.String("dburi"))
-						}
+						var emailListPath string
 
 						if c.Args().Get(0) != "" {
 							healthcheckPath = c.Args().Get(0)
@@ -67,36 +70,17 @@ func main() {
 							fmt.Println("You must provide the path to the healthcheck file.")
 						}
 
+						if c.String("dburi") != "" {
+							config.SetDBURI(c.String("dburi"))
+						}
 						if c.String("report") != "" {
 							reportPath = c.String("report")
 						}
-
-						fmt.Println("DB_URI: ", config.DBURI())
-						fmt.Println("PATH: ", healthcheckPath)
-
-						healthChecks := healthcheck.ReadYamlFromFile(healthcheckPath)
-						cxn := database.GetPGConnection(config.DBURI())
-						results, _ := healthcheck.PreformHealthChecks(healthChecks, cxn)
-						metadata := map[string]interface{}{
-							"name":      healthChecks.Name,
-							"db_name":   config.PgDatabase,
-							"footer":    healthcheck.FooterHealthcheck,
-							"timestamp": time.Now().UTC().String(),
+						if c.String("email") != "" {
+							emailListPath = c.String("email")
 						}
 
-						var elements []report.Element
-						for _, val := range results {
-							elements = append(elements, val)
-						}
-
-						if reportPath != "" {
-							prr := report.NewPongo2ReportRunnerFromString(healthcheck.TemplateHealthcheck)
-							fhr := report.FileHandler{Filename: reportPath}
-							rs := report.Set{Elements: elements, Metadata: metadata}
-							reader, _ := prr.ReportReader(rs)
-							_ = fhr.HandleReport(reader)
-						}
-
+						healthcheckRunner(config, healthcheckPath, reportPath, emailListPath)
 					},
 				},
 				{
@@ -164,4 +148,45 @@ func main() {
 	}
 
 	app.Run(os.Args)
+}
+
+func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath string, emailListPath string) {
+	fmt.Println("DB_URI: ", config.DBURI())
+	fmt.Println("PATH: ", healthcheckPath)
+
+	healthChecks := healthcheck.ReadYamlFromFile(healthcheckPath)
+	cxn := database.GetPGConnection(config.DBURI())
+	results, _ := healthcheck.PreformHealthChecks(healthChecks, cxn)
+	var elements []report.Element
+	for _, val := range results {
+		elements = append(elements, val)
+	}
+
+	// Make Templated report
+	metadata := map[string]interface{}{
+		"name":      healthChecks.Name,
+		"db_name":   config.PgDatabase,
+		"footer":    healthcheck.FooterHealthcheck,
+		"timestamp": time.Now().UTC().String(),
+	}
+	prr := report.NewPongo2ReportRunnerFromString(healthcheck.TemplateHealthcheck)
+	rs := report.Set{Elements: elements, Metadata: metadata}
+	reader, _ := prr.ReportReader(rs)
+
+	// Write report to file
+	if reportPath != "" {
+		fhr := report.FileHandler{Filename: reportPath}
+		_ = fhr.HandleReport(reader)
+	}
+
+	// Email report
+	if emailListPath != "" {
+		ehr := report.EmailHandler{
+			StmpHost:  config.SMTPHost + ":" + config.SMTPPort,
+			Sender:    "-",
+			Recipient: "-",
+			Html:      true,
+		}
+		_ = ehr.HandleReport(reader)
+	}
 }
