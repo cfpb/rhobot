@@ -18,6 +18,9 @@ type Config struct {
 	gocdPort     string
 	gocdUser     string
 	gocdPassword string
+
+	SMTPHost string
+	SMTPPort string
 }
 
 // NewDefaultConfig creates a new configuration object with default settings
@@ -73,6 +76,14 @@ func NewConfig() (config *Config) {
 
 	if os.Getenv("GOCDPASSWORD") != "" {
 		config.gocdPassword = os.Getenv("GOCDPASSWORD")
+	}
+
+	if os.Getenv("SMTPHOST") != "" {
+		config.SMTPHost = os.Getenv("SMTPHOST")
+	}
+
+	if os.Getenv("SMTPPORT") != "" {
+		config.SMTPPort = os.Getenv("SMTPPORT")
 	}
 
 	return
