@@ -220,8 +220,8 @@ func pipelineGET(gocdURL string, pipelineName string) (pipeline Pipeline, etag s
 	if resp.StatusCode != 200 {
 		err = fmt.Errorf("Bad response code: %d", resp.StatusCode)
 		return pipeline, etag, err
-  }
-	
+	}
+
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return pipeline, etag, err
@@ -269,8 +269,7 @@ func Pull(gocdURL string, path string) {
 // Exist checks if a pipeline of a given name exist, returns it's etag or an empty string
 func Exist(gocdURL string, name string) (etag string) {
 
-	_, etag, err := pipelineGET(gocdURL, name)
-	check(err)
+	_, etag, _ = pipelineGET(gocdURL, name)
 	return etag
 }
 

@@ -10,7 +10,7 @@ import (
 type Config struct {
 	pgHost     string
 	pgPort     string
-	pgDatabase string
+	PgDatabase string
 	pgUser     string
 	pgPassword string
 
@@ -25,7 +25,7 @@ func NewDefaultConfig() *Config {
 	return &Config{
 		pgHost:       "localhost",
 		pgPort:       "5432",
-		pgDatabase:   "postgres",
+		PgDatabase:   "postgres",
 		pgUser:       "postgres",
 		pgPassword:   "password",
 		gocdHost:     "http://localhost",
@@ -48,7 +48,7 @@ func NewConfig() (config *Config) {
 	}
 
 	if os.Getenv("PGDATABASE") != "" {
-		config.pgDatabase = os.Getenv("PGDATABASE")
+		config.PgDatabase = os.Getenv("PGDATABASE")
 	}
 
 	if os.Getenv("PGUSER") != "" {
@@ -92,7 +92,7 @@ func (config *Config) SetDBURI(dbURI string) {
 	config.pgUser = match[1]
 	config.pgPassword = match[2]
 	config.pgHost = match[3]
-	config.pgDatabase = match[4]
+	config.PgDatabase = match[4]
 }
 
 // DBURI generates a DB URI from the proper configruation options
@@ -102,7 +102,7 @@ func (config *Config) DBURI() (dbURI string) {
 		config.pgPassword,
 		config.pgHost,
 		config.pgPort,
-		config.pgDatabase)
+		config.PgDatabase)
 
 	return
 }

@@ -3,11 +3,13 @@ package main
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/cfpb/rhobot/config"
 	"github.com/cfpb/rhobot/database"
 	"github.com/cfpb/rhobot/gocd"
 	"github.com/cfpb/rhobot/healthcheck"
+	"github.com/cfpb/rhobot/report"
 	"github.com/codegangsta/cli"
 )
 
@@ -20,6 +22,22 @@ func main() {
 
 	config := config.NewConfig()
 
+	gocdHostFlag := cli.StringFlag{
+		Name:  "host",
+		Value: "",
+		Usage: "host of the GoCD server",
+	}
+	reportFileFlag := cli.StringFlag{
+		Name:  "report",
+		Value: "",
+		Usage: "path to the healthcheck report",
+	}
+	dburiFlag := cli.StringFlag{
+		Name:  "dburi",
+		Value: "",
+		Usage: "database uri postgres://user:password@host:port/database",
+	}
+
 	app.Commands = []cli.Command{
 		{
 			Name:    "run",
@@ -28,28 +46,57 @@ func main() {
 			Subcommands: []cli.Command{
 				{
 					Name:  "healthchecks",
-					Usage: "HEALTHCHECK_FILE [DATABASE_URI]",
+					Usage: "HEALTHCHECK_FILE [--dburi DATABASE_URI] [--report REPORT_FILE]",
+					Flags: []cli.Flag{
+						reportFileFlag,
+						dburiFlag,
+					},
 					Action: func(c *cli.Context) {
 
-						// The path argument is required, but URI is optional
-						if len(c.Args()) > 1 {
-							config.SetDBURI(c.Args()[1])
-						}
-						fmt.Println("DB_URI: ", config.DBURI())
+						// variables to be populated by cli args
+						var healthcheckPath string
+						var reportPath string
 
-						var path string
-						if len(c.Args()) > 0 {
-							path = c.Args()[0]
+						if c.String("dburi") != "" {
+							config.SetDBURI(c.String("dburi"))
+						}
+
+						if c.Args().Get(0) != "" {
+							healthcheckPath = c.Args().Get(0)
 						} else {
 							fmt.Println("You must provide the path to the healthcheck file.")
 						}
-						fmt.Println("PATH: ", path)
 
-						healthChecks := healthcheck.ReadYamlFromFile(path)
+						if c.String("report") != "" {
+							reportPath = c.String("report")
+						}
+
+						fmt.Println("DB_URI: ", config.DBURI())
+						fmt.Println("PATH: ", healthcheckPath)
+
+						healthChecks := healthcheck.ReadYamlFromFile(healthcheckPath)
 						cxn := database.GetPGConnection(config.DBURI())
-						healthcheck.PreformHealthChecks(healthChecks, cxn)
+						results, _ := healthcheck.PreformHealthChecks(healthChecks, cxn)
+						metadata := map[string]interface{}{
+							"name":      healthChecks.Name,
+							"db_name":   config.PgDatabase,
+							"footer":    healthcheck.FooterHealthcheck,
+							"timestamp": time.Now().UTC().String(),
+						}
 
-						//TODO: turn results into report
+						var elements []report.Element
+						for _, val := range results {
+							elements = append(elements, val)
+						}
+
+						if reportPath != "" {
+							prr := report.NewPongo2ReportRunnerFromString(healthcheck.TemplateHealthcheck)
+							fhr := report.FileHandler{Filename: reportPath}
+							rs := report.Set{Elements: elements, Metadata: metadata}
+							reader, _ := prr.ReportReader(rs)
+							_ = fhr.HandleReport(reader)
+						}
+
 					},
 				},
 				{
@@ -61,11 +108,7 @@ func main() {
 							Name:  "push",
 							Usage: "PATH [PIPELINE_GROUP]",
 							Flags: []cli.Flag{
-								cli.StringFlag{
-									Name:  "host",
-									Value: "",
-									Usage: "host of the GoCD server",
-								},
+								gocdHostFlag,
 							},
 							Action: func(c *cli.Context) {
 								if c.String("host") != "" {
@@ -85,11 +128,7 @@ func main() {
 							Name:  "pull",
 							Usage: "PATH",
 							Flags: []cli.Flag{
-								cli.StringFlag{
-									Name:  "host",
-									Value: "",
-									Usage: "host of the GoCD server",
-								},
+								gocdHostFlag,
 							},
 							Action: func(c *cli.Context) {
 								if c.String("host") != "" {
@@ -105,11 +144,7 @@ func main() {
 							Name:  "clone",
 							Usage: "PIPELINE_NAME PATH",
 							Flags: []cli.Flag{
-								cli.StringFlag{
-									Name:  "host",
-									Value: "",
-									Usage: "host of the GoCD server",
-								},
+								gocdHostFlag,
 							},
 							Action: func(c *cli.Context) {
 								if c.String("host") != "" {

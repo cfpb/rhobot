@@ -9,6 +9,7 @@ We follow the [Semantic Versioning 2.0.0](http://semver.org/) format.
 - Healthcheck runner for executing SQL healthchecks on a given database as described in a YAML file.
 - Basic CLI interface
 - Basic global configuration module
+- Basic reporting mechanism
 
 ### Deprecated
 - Nothing.

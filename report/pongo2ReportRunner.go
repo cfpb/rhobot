@@ -7,16 +7,31 @@ import (
 	"github.com/flosch/pongo2"
 )
 
-// Pongo2ReportRunner initilization with template path
+// NewPongo2ReportRunnerFromFile constructor with template file
+func NewPongo2ReportRunnerFromFile(TemplateFilePath string) *Pongo2ReportRunner {
+	var template = pongo2.Must(pongo2.FromFile(TemplateFilePath))
+	return &Pongo2ReportRunner{
+		Template: *template,
+	}
+}
+
+// NewPongo2ReportRunnerFromString constructor with template string
+func NewPongo2ReportRunnerFromString(TemplateString string) *Pongo2ReportRunner {
+	var template = pongo2.Must(pongo2.FromString(TemplateString))
+	return &Pongo2ReportRunner{
+		Template: *template,
+	}
+}
+
+// Pongo2ReportRunner initilization with template object
 type Pongo2ReportRunner struct {
-	TemplateFilePath string
+	Template pongo2.Template
 }
 
 // ReportReader Implementation for ReportRunner
 func (p2rr Pongo2ReportRunner) ReportReader(reportSet Set) (io.Reader, error) {
 
-	var tplExample = pongo2.Must(pongo2.FromFile(p2rr.TemplateFilePath))
-	reportBytes, err := tplExample.ExecuteBytes(reportSet.GetReportMap())
+	reportBytes, err := p2rr.Template.ExecuteBytes(reportSet.GetReportMap())
 	if err != nil {
 		panic(err)
 	}
