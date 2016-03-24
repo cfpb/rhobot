@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/cfpb/rhobot/config"
@@ -179,13 +180,16 @@ func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath
 		_ = fhr.HandleReport(reader)
 	}
 
+	SMTPPortInt, _ := strconv.Atoi(config.SMTPPort)
+
 	// Email report
 	if emailListPath != "" {
 		ehr := report.EmailHandler{
-			StmpHost:  config.SMTPHost + ":" + config.SMTPPort,
-			Sender:    "-",
-			Recipient: "-",
-			Html:      true,
+			SMTPHost:   config.SMTPHost,
+			SMTPPort:   SMTPPortInt,
+			Sender:     "-",
+			Recipients: []string{"-"},
+			HTML:       true,
 		}
 		_ = ehr.HandleReport(reader)
 	}
