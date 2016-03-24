@@ -2,7 +2,6 @@ package healthcheck
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"os"
 	"reflect"
@@ -11,24 +10,17 @@ import (
 
 	"gopkg.in/yaml.v2"
 
+	log "github.com/Sirupsen/logrus"
+	"github.com/cfpb/rhobot/config"
 	"github.com/cfpb/rhobot/database"
 	"github.com/cfpb/rhobot/report"
 )
 
 var healthchecks []byte
-var host string
-var db string
-var user string
-var pass string
-var uri string
+var conf *config.Config
 
 func init() {
-
-	host = os.Getenv("PGHOST")
-	db = os.Getenv("PGDATABASE")
-	user = os.Getenv("PGUSER")
-	pass = os.Getenv("PGPASSWORD")
-	uri = fmt.Sprintf("postgres://%s:%s@%s/%s", user, pass, host, db)
+	conf = config.NewConfig()
 
 	buf := bytes.NewBuffer(nil)
 	f, _ := os.Open("healthchecksTest.yml")
@@ -38,14 +30,11 @@ func init() {
 }
 
 func TestUnmarshal(t *testing.T) {
-
 	unmarshalHealthChecks(healthchecks)
-
 }
 
 // TestUnmarshalFidelityLoss checks that data can be reserielized without fidelity loss
 func TestUnmarshalFidelityLoss(t *testing.T) {
-
 	data := unmarshalHealthChecks(healthchecks)
 	healthchecks2, _ := yaml.Marshal(data)
 	data2 := unmarshalHealthChecks(healthchecks2)
@@ -55,89 +44,98 @@ func TestUnmarshalFidelityLoss(t *testing.T) {
 }
 
 func TestRunningBasicChecks(t *testing.T) {
-
-	cxn := database.GetPGConnection(uri)
+	cxn := database.GetPGConnection(conf.DBURI())
 	healthChecks := unmarshalHealthChecks(healthchecks)
 	RunHealthChecks(healthChecks, cxn)
-
 }
 
 func TestEvaluatingBasicChecks(t *testing.T) {
-
-	cxn := database.GetPGConnection(uri)
+	cxn := database.GetPGConnection(conf.DBURI())
 	healthChecks := unmarshalHealthChecks(healthchecks)
 	healthChecks = RunHealthChecks(healthChecks, cxn)
 	results, err := EvaluateHealthChecks(healthChecks)
 
 	if err != nil {
-		t.Error("healthchecksTest threw an error")
+		log.Error(err)
+		t.Fail()
 	}
 	if len(results) != 3 {
-		t.Error("healthchecks results wrong length")
+		log.Error("Healthchecks results had the wrong length")
+		t.Fail()
 	}
 }
 
 func TestEvaluatingErrorsChecks(t *testing.T) {
-
-	cxn := database.GetPGConnection(uri)
+	cxn := database.GetPGConnection(conf.DBURI())
 	healthChecks := ReadYamlFromFile("healthchecksErrors.yml")
 	healthChecks = RunHealthChecks(healthChecks, cxn)
 	results, err := EvaluateHealthChecks(healthChecks)
 
 	if err == nil {
-		t.Error("healthchecksErrors did not throw an error")
+		log.Error("Healthchecks did not throw an error, but should have")
+		t.Fail()
 	}
 	if len(results) != 2 {
-		t.Error("healthchecks results wrong length")
+		log.Error("Healthcheck results had the wrong length")
+		t.Fail()
 	}
 }
 
 func TestEvaluatingFatalChecks(t *testing.T) {
-
-	cxn := database.GetPGConnection(uri)
+	cxn := database.GetPGConnection(conf.DBURI())
 	healthChecks := ReadYamlFromFile("healthchecksFatal.yml")
 	healthChecks = RunHealthChecks(healthChecks, cxn)
 	results, err := EvaluateHealthChecks(healthChecks)
 
 	if err == nil {
-		t.Error("healthchecksFatal did not throw an error")
+		log.Error("Healthchecks did not throw an error, but should have")
+		t.Fail()
 	}
+
 	if len(results) != 1 {
-		t.Error("healthchecks results wrong length")
+		log.Error("Healthcheck results had the wrong length")
+		t.Fail()
 	}
 }
 
 func TestPreformAllChecks(t *testing.T) {
-
-	cxn := database.GetPGConnection(uri)
+	cxn := database.GetPGConnection(conf.DBURI())
 	healthChecks := ReadYamlFromFile("healthchecksAll.yml")
 	results, err := PreformHealthChecks(healthChecks, cxn)
 
 	if err == nil {
-		t.Error("healthchecksAll did not throw an error")
+		log.Error("Healthchecks did not throw an error, but should have")
+		t.Fail()
 	}
 	if len(results) != 5 {
-		t.Error("healthchecks results wrong length")
+		log.Error("Healthcheck results had the wrong length")
+		t.Fail()
 	}
 }
 
 func TestSQLHealthCheckReportableElement(t *testing.T) {
-	fmt.Println("TestSQLHealthCheckReportableElement")
 	var hcr report.Element
 
-	hcr = SQLHealthCheck{"true", "select (select count(1) from information_schema.tables) > 0;", "basic test", "FATAL", true, "t"}
+	hcr = SQLHealthCheck{
+		"true",
+		"select (select count(1) from information_schema.tables) > 0;",
+		"basic test", "FATAL",
+		true,
+		"t",
+	}
+
 	for _, header := range hcr.GetHeaders() {
-		fmt.Printf("%s : %s\n", header, hcr.GetValue(header))
+		log.Debugf("%s : %s\n", header, hcr.GetValue(header))
 	}
 
 	if hcr.GetHeaders() == nil {
-		t.Error("no headers in report ReportableElement")
+		log.Error("No headers in report ReportableElement")
+		t.Fail()
 	}
 
 }
 
 func TestHealthcheckPongo2Report(t *testing.T) {
-	fmt.Println("TestHealthcheckPongo2Report")
 	var rePass, reFail report.Element
 	var rs report.Set
 	var prr report.Runner
@@ -155,12 +153,12 @@ func TestHealthcheckPongo2Report(t *testing.T) {
 		"footer":    FooterHealthcheck,
 		"timestamp": time.Now().UTC().String(),
 	}
-	rs = report.Set{elements, metadata}
+	rs = report.Set{Elements: elements, Metadata: metadata}
 
 	reader, err := prr.ReportReader(rs)
 	err = phr.HandleReport(reader)
 	if err != nil {
-		t.Fatalf("error writing report\n%s", err)
+		log.Errorf("Error writing report: %v", err)
+		t.FailNow()
 	}
-
 }

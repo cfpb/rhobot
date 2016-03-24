@@ -4,9 +4,9 @@ import (
 	"database/sql"
 	"errors"
 	"io/ioutil"
-	"log"
 	"strings"
 
+	log "github.com/Sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 )
 
@@ -36,12 +36,11 @@ type HCError struct {
 }
 
 func unmarshalHealthChecks(yamldata []byte) Format {
-
 	var data Format
 
 	err := yaml.Unmarshal(yamldata, &data)
 	if err != nil {
-		log.Fatalf("ERROR: %v", err)
+		log.Fatal(err)
 	}
 
 	// inflate queryfiles
@@ -59,7 +58,6 @@ func ReadYamlFromFile(path string) Format {
 
 // RunHealthChecks executes all health checks in the specified file
 func RunHealthChecks(healthChecks Format, cxn *sql.DB) Format {
-
 	for _, test := range healthChecks.Tests {
 		test = RunHealthCheck(test, cxn)
 	}
@@ -68,7 +66,6 @@ func RunHealthChecks(healthChecks Format, cxn *sql.DB) Format {
 
 // EvaluateHealthChecks contains logic for handling the results of RunHealthChecks
 func EvaluateHealthChecks(healthChecks Format) (results []SQLHealthCheck, err error) {
-
 	for _, test := range healthChecks.Tests {
 		results = append(results, test)
 		hcErr := EvaluateHealthCheck(test)
@@ -111,7 +108,7 @@ func RunHealthCheck(healthCheck SQLHealthCheck, cxn *sql.DB) SQLHealthCheck {
 	rows, err := cxn.Query(healthCheck.Query)
 
 	if err != nil {
-		log.Fatalf("Error: %v", err)
+		log.Fatal(err)
 	}
 
 	rows.Next()
@@ -131,25 +128,24 @@ func EvaluateHealthCheck(healthCheck SQLHealthCheck) (err HCError) {
 
 		// When Fatal, return early with an error
 		case "fatal":
-			prettyHealthCheck, _ := yaml.Marshal(&healthCheck)
-			log.Printf("FATAL healthcheck failed\nBreaking Away Early\n%s\n\n", string(prettyHealthCheck))
+			log.Errorf("FATAL healthcheck failed - Breaking Away Early\n%s", string(prettyHealthCheck))
 			err = HCError{"FATAL healthCheck failure", true}
 
 		// When Error, keep running but add an error
 		case "error":
-			prettyHealthCheck, _ := yaml.Marshal(&healthCheck)
-			log.Printf("%s healthcheck failed\n %s\n\n", strings.ToUpper(healthCheck.Severity), string(prettyHealthCheck))
+			log.Errorf("Healthcheck failed\n%s", string(prettyHealthCheck))
 			err = HCError{"ERROR healthCheck failure", false}
 
 		// When warn or info, print out the result and keep running
-		case "warn", "info":
-			prettyHealthCheck, _ := yaml.Marshal(&healthCheck)
-			log.Printf("%s healthcheck failed\n %s\n\n", strings.ToUpper(healthCheck.Severity), string(prettyHealthCheck))
+		case "warn":
+			log.Warnf("Healthcheck failed\n%s", string(prettyHealthCheck))
+		case "info":
+			log.Infof("Healthcheck failed\n%s", string(prettyHealthCheck))
 		default:
-			log.Printf("undefined severity level:%s\n%s\n\n", strings.ToUpper(healthCheck.Severity), string(prettyHealthCheck))
+			log.Errorf("Undefined severity level:%s\n%s", strings.ToUpper(healthCheck.Severity), string(prettyHealthCheck))
 		}
 	} else {
-		log.Printf("%s healthcheck passed\n %s\n\n", strings.ToUpper(healthCheck.Severity), string(prettyHealthCheck))
+		log.Printf("%s healthcheck passed\n%s\n", strings.ToUpper(healthCheck.Severity), string(prettyHealthCheck))
 	}
 
 	return err
@@ -168,7 +164,6 @@ func (hcr SQLHealthCheck) GetHeaders() []string {
 
 // GetValue Implementation for report.Element
 func (hcr SQLHealthCheck) GetValue(key string) string {
-
 	switch key {
 	case HealthCheckReportHeaders[0]:
 		return hcr.Title

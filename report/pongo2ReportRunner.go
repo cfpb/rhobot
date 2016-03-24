@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/flosch/pongo2"
 )
 
@@ -30,12 +31,11 @@ type Pongo2ReportRunner struct {
 
 // ReportReader Implementation for ReportRunner
 func (p2rr Pongo2ReportRunner) ReportReader(reportSet Set) (io.Reader, error) {
-
 	reportBytes, err := p2rr.Template.ExecuteBytes(reportSet.GetReportMap())
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	r := bytes.NewReader(reportBytes)
-	// fmt.Println(string(reportBytes))
+	log.Debug(string(reportBytes))
 	return r, err
 }

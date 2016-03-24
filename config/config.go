@@ -35,7 +35,7 @@ func NewDefaultConfig() *Config {
 	return &Config{
 		logFormatter: &log.TextFormatter{},
 		logOutput:    os.Stderr,
-		logLevel:     log.WarnLevel, // TODO: Will be log.WarnLevel
+		logLevel:     log.InfoLevel,
 		pgHost:       "localhost",
 		pgPort:       "5432",
 		PgDatabase:   "postgres",
@@ -50,10 +50,9 @@ func NewDefaultConfig() *Config {
 
 // NewConfig creates a new configuration object from environment variables
 func NewConfig() (config *Config) {
-	log.Debug("Creating default configuration.")
 	config = NewDefaultConfig()
-
 	config.UpdateLogger()
+	log.Debug("Created default configuration.")
 
 	log.Debug("Loading settings from environment variables, when appropriate.")
 	if os.Getenv("PGHOST") != "" {

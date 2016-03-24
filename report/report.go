@@ -23,7 +23,6 @@ type Set struct {
 
 // GetReportMap converts a ReportSet to generic go map
 func (rs *Set) GetReportMap() map[string]interface{} {
-
 	elements := make([]map[string]interface{}, len(rs.Elements))
 	for i, element := range rs.Elements {
 		elementMap := make(map[string]interface{})

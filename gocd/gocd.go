@@ -112,20 +112,20 @@ func pipelineConfigPUT(gocdURL string, pipeline Pipeline, etag string) (pipeline
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("If-Match", etag)
 
-	log.Debug("Sending request: ", req)
+	log.Debugf("Sending request: %v", req)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != 200 {
-		err = fmt.Errorf("Bad response code: %d", resp.StatusCode)
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
 		return
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
+	if resp.StatusCode != 200 {
+		err = fmt.Errorf("Bad response code: %d, response: %s", resp.StatusCode, body)
 		return
 	}
 
@@ -161,7 +161,7 @@ func pipelineConfigPOST(gocdURL string, pipelineConfig PipelineConfig) (pipeline
 	req.Header.Set("Accept", "application/vnd.go.cd.v1+json")
 	req.Header.Set("Content-Type", "application/json")
 
-	log.Debug("Sending request: ", req)
+	log.Debugf("Sending request: %v", req)
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -169,13 +169,13 @@ func pipelineConfigPOST(gocdURL string, pipelineConfig PipelineConfig) (pipeline
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != 200 {
-		err = fmt.Errorf("Bad response code: %d", resp.StatusCode)
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
 		return
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
+	if resp.StatusCode != 200 {
+		err = fmt.Errorf("Bad response code: %d with response: %s", resp.StatusCode, body)
 		return
 	}
 
@@ -211,13 +211,13 @@ func pipelineGET(gocdURL string, pipelineName string) (pipeline Pipeline, etag s
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != 200 {
-		err = fmt.Errorf("Bad response code: %d", resp.StatusCode)
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
 		return
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
+	if resp.StatusCode != 200 {
+		err = fmt.Errorf("Bad response code: %d with response: %s", resp.StatusCode, body)
 		return
 	}
 
@@ -243,7 +243,7 @@ func Push(gocdURL string, path string, group string) (err error) {
 
 	etag, err := Exist(gocdURL, pipeline.Name)
 	if err != nil {
-		return
+		log.Warn(err)
 	}
 
 	if etag == "" {

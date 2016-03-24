@@ -26,7 +26,7 @@ func main() {
 
 	logLevelFlag := cli.StringFlag{
 		Name:  "loglevel, lvl",
-		Value: "warn",
+		Value: "",
 		Usage: "sets the log level for Rhobot",
 	}
 	gocdHostFlag := cli.StringFlag{
@@ -66,7 +66,9 @@ func main() {
 						emailListFlag,
 					},
 					Action: func(c *cli.Context) {
-						config.SetLogLevel(c.String("loglevel"))
+						if c.String("loglevel") != "" {
+							config.SetLogLevel(c.String("loglevel"))
+						}
 
 						// variables to be populated by cli args
 						var healthcheckPath string
@@ -85,11 +87,13 @@ func main() {
 						if c.String("dburi") != "" {
 							config.SetDBURI(c.String("dburi"))
 						}
+
 						log.Debug("DB_URI: ", config.DBURI())
 
 						if c.String("report") != "" {
 							reportPath = c.String("report")
 						}
+
 						if c.String("email") != "" {
 							emailListPath = c.String("email")
 						}
@@ -110,7 +114,9 @@ func main() {
 								gocdHostFlag,
 							},
 							Action: func(c *cli.Context) {
-								config.SetLogLevel(c.String("loglevel"))
+								if c.String("loglevel") != "" {
+									config.SetLogLevel(c.String("loglevel"))
+								}
 
 								if c.String("host") != "" {
 									log.Debug("Setting GoCD host: ", c.String("host"))
@@ -120,10 +126,12 @@ func main() {
 								if len(c.Args()) > 0 {
 									path := c.Args()[0]
 									group := c.Args().Get(1)
-									log.Info("Push config from ", path, " to pipeline group ", group)
+									log.Infof("Pushing config from %v to pipeline group %v...", path, group)
 									if err := gocd.Push(config.GoCDURL(), path, group); err != nil {
-										log.Fatal("Failed to push pipeline configuration: ", err)
+										log.Error(err)
+										log.Fatal("Failed to push pipeline configuration!")
 									}
+									log.Info("Success!")
 								} else {
 									log.Fatal("PATH is required for the 'push' command.")
 								}
@@ -137,7 +145,9 @@ func main() {
 								gocdHostFlag,
 							},
 							Action: func(c *cli.Context) {
-								config.SetLogLevel(c.String("loglevel"))
+								if c.String("loglevel") != "" {
+									config.SetLogLevel(c.String("loglevel"))
+								}
 
 								if c.String("host") != "" {
 									config.SetGoCDHost(c.String("host"))
@@ -145,10 +155,11 @@ func main() {
 
 								if len(c.Args()) > 0 {
 									path := c.Args()[0]
-									log.Info("Pull config from ", config.GoCDURL(), " to ", path)
+									log.Infof("Pulling config from %v to %v...", config.GoCDURL(), path)
 									if err := gocd.Pull(config.GoCDURL(), path); err != nil {
 										log.Fatal("Failed to pull pipeline config: ", err)
 									}
+									log.Info("Success!")
 								} else {
 									log.Fatal("A path to pull the pipeline config to is required.")
 								}
@@ -162,7 +173,9 @@ func main() {
 								gocdHostFlag,
 							},
 							Action: func(c *cli.Context) {
-								config.SetLogLevel(c.String("loglevel"))
+								if c.String("loglevel") != "" {
+									config.SetLogLevel(c.String("loglevel"))
+								}
 
 								if c.String("host") != "" {
 									config.SetGoCDHost(c.String("host"))
@@ -171,10 +184,11 @@ func main() {
 								if len(c.Args()) > 1 {
 									name := c.Args()[0]
 									path := c.Args()[1]
-									log.Info("Cloning pipeline ", name, " to ", path)
+									log.Infof("Cloning pipeline %v to %v...", name, path)
 									if err := gocd.Clone(config.GoCDURL(), path, name); err != nil {
 										log.Fatal("Failed to clone pipeline config: ", err)
 									}
+									log.Info("Success!")
 								} else {
 									log.Fatal("A pipeline name and a path to clone to are required.")
 								}
