@@ -2,7 +2,8 @@ package database
 
 import (
 	"database/sql"
-	"log"
+
+	log "github.com/Sirupsen/logrus"
 
 	_ "github.com/lib/pq" // Blank import required
 )
