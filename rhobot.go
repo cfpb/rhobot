@@ -24,6 +24,11 @@ func main() {
 
 	config := config.NewConfig()
 
+	logLevelFlag := cli.StringFlag{
+		Name:  "loglevel, lvl",
+		Value: "warn",
+		Usage: "sets the log level for Rhobot",
+	}
 	gocdHostFlag := cli.StringFlag{
 		Name:  "host",
 		Value: "",
@@ -55,11 +60,13 @@ func main() {
 					Name:  "healthchecks",
 					Usage: "HEALTHCHECK_FILE [--dburi DATABASE_URI] [--report REPORT_FILE] [--email DISTRIBUTION_FILE]",
 					Flags: []cli.Flag{
+						logLevelFlag,
 						reportFileFlag,
 						dburiFlag,
 						emailListFlag,
 					},
 					Action: func(c *cli.Context) {
+						config.SetLogLevel(c.String("loglevel"))
 
 						// variables to be populated by cli args
 						var healthcheckPath string
@@ -72,6 +79,7 @@ func main() {
 							log.Error("You must provide the path to the healthcheck file.")
 							return
 						}
+
 						log.Info("Running health checks from ", healthcheckPath)
 
 						if c.String("dburi") != "" {
@@ -98,10 +106,14 @@ func main() {
 							Name:  "push",
 							Usage: "PATH [PIPELINE_GROUP]",
 							Flags: []cli.Flag{
+								logLevelFlag,
 								gocdHostFlag,
 							},
 							Action: func(c *cli.Context) {
+								config.SetLogLevel(c.String("loglevel"))
+
 								if c.String("host") != "" {
+									log.Debug("Setting GoCD host: ", c.String("host"))
 									config.SetGoCDHost(c.String("host"))
 								}
 
@@ -121,9 +133,12 @@ func main() {
 							Name:  "pull",
 							Usage: "PATH",
 							Flags: []cli.Flag{
+								logLevelFlag,
 								gocdHostFlag,
 							},
 							Action: func(c *cli.Context) {
+								config.SetLogLevel(c.String("loglevel"))
+
 								if c.String("host") != "" {
 									config.SetGoCDHost(c.String("host"))
 								}
@@ -143,9 +158,12 @@ func main() {
 							Name:  "clone",
 							Usage: "PIPELINE_NAME PATH",
 							Flags: []cli.Flag{
+								logLevelFlag,
 								gocdHostFlag,
 							},
 							Action: func(c *cli.Context) {
+								config.SetLogLevel(c.String("loglevel"))
+
 								if c.String("host") != "" {
 									config.SetGoCDHost(c.String("host"))
 								}

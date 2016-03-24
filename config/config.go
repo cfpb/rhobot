@@ -35,7 +35,7 @@ func NewDefaultConfig() *Config {
 	return &Config{
 		logFormatter: &log.TextFormatter{},
 		logOutput:    os.Stderr,
-		logLevel:     log.DebugLevel, // TODO: Will be log.WarnLevel
+		logLevel:     log.WarnLevel, // TODO: Will be log.WarnLevel
 		pgHost:       "localhost",
 		pgPort:       "5432",
 		PgDatabase:   "postgres",
@@ -117,6 +117,16 @@ func (config *Config) UpdateLogger() {
 	log.SetFormatter(config.logFormatter)
 	log.SetOutput(config.logOutput)
 	log.SetLevel(config.logLevel)
+}
+
+// SetLogLevel sets the global log level
+func (config *Config) SetLogLevel(level string) {
+	var err error
+	if config.logLevel, err = log.ParseLevel(level); err != nil {
+		log.Error(err)
+		return
+	}
+	config.UpdateLogger()
 }
 
 // SetDBURI extracts Postgres connection variables from a DB URI
