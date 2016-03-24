@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"strconv"
 	"time"
@@ -81,24 +80,25 @@ func main() {
 							log.Error("You must provide the path to the healthcheck file.")
 							return
 						}
-
 						log.Info("Running health checks from ", healthcheckPath)
 
 						if c.String("dburi") != "" {
 							config.SetDBURI(c.String("dburi"))
 						}
-
 						log.Debug("DB_URI: ", config.DBURI())
 
 						if c.String("report") != "" {
 							reportPath = c.String("report")
+							log.Debugf("Generating report at %v", reportPath)
 						}
 
 						if c.String("email") != "" {
 							emailListPath = c.String("email")
+							log.Debugf("Emailing report to %v", emailListPath)
 						}
 
 						healthcheckRunner(config, healthcheckPath, reportPath, emailListPath)
+						log.Info("Success!")
 					},
 				},
 				{
@@ -204,9 +204,6 @@ func main() {
 }
 
 func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath string, emailListPath string) {
-	fmt.Println("DB_URI: ", config.DBURI())
-	fmt.Println("PATH: ", healthcheckPath)
-
 	healthChecks := healthcheck.ReadYamlFromFile(healthcheckPath)
 	cxn := database.GetPGConnection(config.DBURI())
 	results, _ := healthcheck.PreformHealthChecks(healthChecks, cxn)
