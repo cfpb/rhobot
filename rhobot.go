@@ -185,11 +185,13 @@ func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath
 	// Email report
 	if emailListPath != "" {
 		ehr := report.EmailHandler{
-			SMTPHost:   config.SMTPHost,
-			SMTPPort:   SMTPPortInt,
-			Sender:     "-",
-			Recipients: []string{"-"},
-			HTML:       true,
+			SMTPHost:    config.SMTPHost,
+			SMTPPort:    SMTPPortInt,
+			SenderEmail: "-",
+			SenderName:  "-",
+			Subject:     "-",
+			Recipients:  []string{"-"},
+			HTML:        true,
 		}
 		_ = ehr.HandleReport(reader)
 	}

@@ -1,6 +1,8 @@
 package report
 
 import (
+	"crypto/tls"
+	"fmt"
 	"io"
 	"io/ioutil"
 
@@ -9,12 +11,13 @@ import (
 
 // EmailHandler initilization should contain any variables used for report
 type EmailHandler struct {
-	SMTPHost   string
-	SMTPPort   int
-	Sender     string
-	Recipients []string
-	Subject    string
-	HTML       bool
+	SMTPHost    string
+	SMTPPort    int
+	SenderEmail string
+	SenderName  string
+	Recipients  []string
+	Subject     string
+	HTML        bool
 }
 
 // HandleReport consumes ReportReader output, writes to file
@@ -23,17 +26,15 @@ func (eh EmailHandler) HandleReport(reader io.Reader) error {
 	msg := gomail.NewMessage()
 
 	msg.SetHeaders(map[string][]string{
-		"From":    {eh.Sender},
 		"To":      eh.Recipients,
 		"Subject": {eh.Subject},
 	})
 
-	reportBytes, err := ioutil.ReadAll(reader)
-	if err != nil {
-		// TODO: print Reading error to logger
-		return err
+	if eh.SenderName != "" {
+		msg.SetHeader("From", msg.FormatAddress(eh.SenderEmail, eh.SenderName))
+	} else {
+		msg.SetHeader("From", eh.SenderEmail)
 	}
-	reportString := string(reportBytes)
 
 	var bodyType string
 	if eh.HTML {
@@ -42,11 +43,20 @@ func (eh EmailHandler) HandleReport(reader io.Reader) error {
 		bodyType = "text/plain"
 	}
 
+	reportBytes, err := ioutil.ReadAll(reader)
+	if err != nil {
+		fmt.Println("print Reading error to logger")
+		// TODO: print Reading error to logger
+		return err
+	}
+	reportString := string(reportBytes)
 	msg.SetBody(bodyType, reportString)
 
 	//dialer := gomail.NewDialer(eh.SMTPHost, eh.SMTPPort, "", "")
 	dialer := gomail.Dialer{Host: eh.SMTPHost, Port: eh.SMTPPort}
+	dialer.TLSConfig = &tls.Config{InsecureSkipVerify: true}
 	if err := dialer.DialAndSend(msg); err != nil {
+		fmt.Println("print Dial error to logger")
 		// TODO: print Dial error to logger
 		return err
 	}
