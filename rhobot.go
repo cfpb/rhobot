@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/cfpb/rhobot/config"
 	"github.com/cfpb/rhobot/database"
 	"github.com/cfpb/rhobot/gocd"
@@ -68,12 +69,16 @@ func main() {
 						if c.Args().Get(0) != "" {
 							healthcheckPath = c.Args().Get(0)
 						} else {
-							fmt.Println("You must provide the path to the healthcheck file.")
+							log.Error("You must provide the path to the healthcheck file.")
+							return
 						}
+						log.Info("Running health checks from ", healthcheckPath)
 
 						if c.String("dburi") != "" {
 							config.SetDBURI(c.String("dburi"))
 						}
+						log.Debug("DB_URI: ", config.DBURI())
+
 						if c.String("report") != "" {
 							reportPath = c.String("report")
 						}
@@ -103,9 +108,12 @@ func main() {
 								if len(c.Args()) > 0 {
 									path := c.Args()[0]
 									group := c.Args().Get(1)
-									gocd.Push(config.GoCDURL(), path, group)
+									log.Info("Push config from ", path, " to pipeline group ", group)
+									if err := gocd.Push(config.GoCDURL(), path, group); err != nil {
+										log.Fatal("Failed to push pipeline configuration: ", err)
+									}
 								} else {
-									fmt.Println("PATH is required for push command.")
+									log.Fatal("PATH is required for the 'push' command.")
 								}
 							},
 						},
@@ -120,9 +128,15 @@ func main() {
 									config.SetGoCDHost(c.String("host"))
 								}
 
-								path := c.Args()[0]
-
-								gocd.Pull(config.GoCDURL(), path)
+								if len(c.Args()) > 0 {
+									path := c.Args()[0]
+									log.Info("Pull config from ", config.GoCDURL(), " to ", path)
+									if err := gocd.Pull(config.GoCDURL(), path); err != nil {
+										log.Fatal("Failed to pull pipeline config: ", err)
+									}
+								} else {
+									log.Fatal("A path to pull the pipeline config to is required.")
+								}
 							},
 						},
 						{
@@ -136,10 +150,16 @@ func main() {
 									config.SetGoCDHost(c.String("host"))
 								}
 
-								name := c.Args()[0]
-								path := c.Args()[1]
-
-								gocd.Clone(config.GoCDURL(), path, name)
+								if len(c.Args()) > 1 {
+									name := c.Args()[0]
+									path := c.Args()[1]
+									log.Info("Cloning pipeline ", name, " to ", path)
+									if err := gocd.Clone(config.GoCDURL(), path, name); err != nil {
+										log.Fatal("Failed to clone pipeline config: ", err)
+									}
+								} else {
+									log.Fatal("A pipeline name and a path to clone to are required.")
+								}
 							},
 						},
 					},
