@@ -101,10 +101,12 @@ func NewConfig() (config *Config) {
 	}
 
 	if os.Getenv("SMTPHOST") != "" {
+		log.Debug("Retrieving value from SMTPHOST environment variable.")
 		config.SMTPHost = os.Getenv("SMTPHOST")
 	}
 
 	if os.Getenv("SMTPPORT") != "" {
+		log.Debug("Retrieving value from SMTPPORT environment variable.")
 		config.SMTPPort = os.Getenv("SMTPPORT")
 	}
 
