@@ -14,7 +14,7 @@ type FileHandler struct {
 }
 
 // HandleReport consumes ReportReader output, writes to file
-func (fr FileHandler) HandleReport(reader io.Reader) error {
+func (fr FileHandler) HandleReport(reader io.Reader) (err error) {
 
 	f, err := os.Create(fr.Filename)
 	w := bufio.NewWriter(f)

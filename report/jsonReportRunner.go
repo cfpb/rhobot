@@ -18,5 +18,6 @@ func (jrr JSONReportRunner) ReportReader(reportSet Set) (io.Reader, error) {
 		log.Fatal(err)
 	}
 	r := bytes.NewReader(reportJSON)
+	log.Debug(string(reportJSON))
 	return r, err
 }

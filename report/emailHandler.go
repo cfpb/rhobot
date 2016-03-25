@@ -2,10 +2,10 @@ package report
 
 import (
 	"crypto/tls"
-	"fmt"
 	"io"
 	"io/ioutil"
 
+	log "github.com/Sirupsen/logrus"
 	"gopkg.in/gomail.v2"
 )
 
@@ -21,7 +21,7 @@ type EmailHandler struct {
 }
 
 // HandleReport consumes ReportReader output, writes to file
-func (eh EmailHandler) HandleReport(reader io.Reader) error {
+func (eh EmailHandler) HandleReport(reader io.Reader) (err error) {
 
 	msg := gomail.NewMessage()
 
@@ -45,20 +45,16 @@ func (eh EmailHandler) HandleReport(reader io.Reader) error {
 
 	reportBytes, err := ioutil.ReadAll(reader)
 	if err != nil {
-		fmt.Println("print Reading error to logger")
-		// TODO: print Reading error to logger
+		log.Error(err)
 		return err
 	}
 	reportString := string(reportBytes)
 	msg.SetBody(bodyType, reportString)
 
-	//dialer := gomail.NewDialer(eh.SMTPHost, eh.SMTPPort, "", "")
 	dialer := gomail.Dialer{Host: eh.SMTPHost, Port: eh.SMTPPort}
 	dialer.TLSConfig = &tls.Config{InsecureSkipVerify: true}
 	if err := dialer.DialAndSend(msg); err != nil {
-		fmt.Println("print Dial error to logger")
-		// TODO: print Dial error to logger
-		return err
+		log.Error(err)
 	}
 
 	return err
