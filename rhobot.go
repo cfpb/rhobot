@@ -49,6 +49,7 @@ func main() {
 		Usage: "yaml file containing email distribution list",
 	}
 
+	app.Flags = []cli.Flag{logLevelFlag}
 	app.Commands = []cli.Command{
 		{
 			Name:    "run",
@@ -59,7 +60,6 @@ func main() {
 					Name:  "healthchecks",
 					Usage: "HEALTHCHECK_FILE [--dburi DATABASE_URI] [--report REPORT_FILE] [--email DISTRIBUTION_FILE]",
 					Flags: []cli.Flag{
-						logLevelFlag,
 						reportFileFlag,
 						dburiFlag,
 						emailListFlag,
@@ -110,7 +110,6 @@ func main() {
 							Name:  "push",
 							Usage: "PATH [PIPELINE_GROUP]",
 							Flags: []cli.Flag{
-								logLevelFlag,
 								gocdHostFlag,
 							},
 							Action: func(c *cli.Context) {
@@ -141,7 +140,6 @@ func main() {
 							Name:  "pull",
 							Usage: "PATH",
 							Flags: []cli.Flag{
-								logLevelFlag,
 								gocdHostFlag,
 							},
 							Action: func(c *cli.Context) {
@@ -169,7 +167,6 @@ func main() {
 							Name:  "clone",
 							Usage: "PIPELINE_NAME PATH",
 							Flags: []cli.Flag{
-								logLevelFlag,
 								gocdHostFlag,
 							},
 							Action: func(c *cli.Context) {

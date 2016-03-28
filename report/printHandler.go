@@ -11,13 +11,14 @@ import (
 type PrintHandler struct{}
 
 // HandleReport consumes ReportReader output, prints to stdout
-func (pr PrintHandler) HandleReport(reader io.Reader) error {
+func (pr PrintHandler) HandleReport(reader io.Reader) (err error) {
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
-		log.Debugf("%s\n", scanner.Text())
+		log.Infof("%s\n", scanner.Text())
 	}
 	if err := scanner.Err(); err != nil {
-		return err
+		log.Error(err)
 	}
-	return nil
+
+	return err
 }

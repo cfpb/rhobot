@@ -1,6 +1,17 @@
 package report
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/cfpb/rhobot/config"
+)
+
+var conf *config.Config
+
+func init() {
+	conf = config.NewConfig()
+	conf.SetLogLevel("info")
+}
 
 type SimpleRE struct {
 	SimpleHeaders []string
