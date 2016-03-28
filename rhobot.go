@@ -1,11 +1,11 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"strconv"
 	"time"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/cfpb/rhobot/config"
 	"github.com/cfpb/rhobot/database"
 	"github.com/cfpb/rhobot/gocd"
@@ -23,6 +23,11 @@ func main() {
 
 	config := config.NewConfig()
 
+	logLevelFlag := cli.StringFlag{
+		Name:  "loglevel, lvl",
+		Value: "",
+		Usage: "sets the log level for Rhobot",
+	}
 	gocdHostFlag := cli.StringFlag{
 		Name:  "host",
 		Value: "",
@@ -44,6 +49,7 @@ func main() {
 		Usage: "yaml file containing email distribution list",
 	}
 
+	app.Flags = []cli.Flag{logLevelFlag}
 	app.Commands = []cli.Command{
 		{
 			Name:    "run",
@@ -59,6 +65,9 @@ func main() {
 						emailListFlag,
 					},
 					Action: func(c *cli.Context) {
+						if c.String("loglevel") != "" {
+							config.SetLogLevel(c.String("loglevel"))
+						}
 
 						// variables to be populated by cli args
 						var healthcheckPath string
@@ -68,20 +77,28 @@ func main() {
 						if c.Args().Get(0) != "" {
 							healthcheckPath = c.Args().Get(0)
 						} else {
-							fmt.Println("You must provide the path to the healthcheck file.")
+							log.Error("You must provide the path to the healthcheck file.")
+							return
 						}
+						log.Info("Running health checks from ", healthcheckPath)
 
 						if c.String("dburi") != "" {
 							config.SetDBURI(c.String("dburi"))
 						}
+						log.Debug("DB_URI: ", config.DBURI())
+
 						if c.String("report") != "" {
 							reportPath = c.String("report")
+							log.Debugf("Generating report at %v", reportPath)
 						}
+
 						if c.String("email") != "" {
 							emailListPath = c.String("email")
+							log.Debugf("Emailing report to %v", emailListPath)
 						}
 
 						healthcheckRunner(config, healthcheckPath, reportPath, emailListPath)
+						log.Info("Success!")
 					},
 				},
 				{
@@ -96,16 +113,26 @@ func main() {
 								gocdHostFlag,
 							},
 							Action: func(c *cli.Context) {
+								if c.String("loglevel") != "" {
+									config.SetLogLevel(c.String("loglevel"))
+								}
+
 								if c.String("host") != "" {
+									log.Debug("Setting GoCD host: ", c.String("host"))
 									config.SetGoCDHost(c.String("host"))
 								}
 
 								if len(c.Args()) > 0 {
 									path := c.Args()[0]
 									group := c.Args().Get(1)
-									gocd.Push(config.GoCDURL(), path, group)
+									log.Infof("Pushing config from %v to pipeline group %v...", path, group)
+									if err := gocd.Push(config.GoCDURL(), path, group); err != nil {
+										log.Error(err)
+										log.Fatal("Failed to push pipeline configuration!")
+									}
+									log.Info("Success!")
 								} else {
-									fmt.Println("PATH is required for push command.")
+									log.Fatal("PATH is required for the 'push' command.")
 								}
 							},
 						},
@@ -116,13 +143,24 @@ func main() {
 								gocdHostFlag,
 							},
 							Action: func(c *cli.Context) {
+								if c.String("loglevel") != "" {
+									config.SetLogLevel(c.String("loglevel"))
+								}
+
 								if c.String("host") != "" {
 									config.SetGoCDHost(c.String("host"))
 								}
 
-								path := c.Args()[0]
-
-								gocd.Pull(config.GoCDURL(), path)
+								if len(c.Args()) > 0 {
+									path := c.Args()[0]
+									log.Infof("Pulling config from %v to %v...", config.GoCDURL(), path)
+									if err := gocd.Pull(config.GoCDURL(), path); err != nil {
+										log.Fatal("Failed to pull pipeline config: ", err)
+									}
+									log.Info("Success!")
+								} else {
+									log.Fatal("A path to pull the pipeline config to is required.")
+								}
 							},
 						},
 						{
@@ -132,14 +170,25 @@ func main() {
 								gocdHostFlag,
 							},
 							Action: func(c *cli.Context) {
+								if c.String("loglevel") != "" {
+									config.SetLogLevel(c.String("loglevel"))
+								}
+
 								if c.String("host") != "" {
 									config.SetGoCDHost(c.String("host"))
 								}
 
-								name := c.Args()[0]
-								path := c.Args()[1]
-
-								gocd.Clone(config.GoCDURL(), path, name)
+								if len(c.Args()) > 1 {
+									name := c.Args()[0]
+									path := c.Args()[1]
+									log.Infof("Cloning pipeline %v to %v...", name, path)
+									if err := gocd.Clone(config.GoCDURL(), path, name); err != nil {
+										log.Fatal("Failed to clone pipeline config: ", err)
+									}
+									log.Info("Success!")
+								} else {
+									log.Fatal("A pipeline name and a path to clone to are required.")
+								}
 							},
 						},
 					},
@@ -152,9 +201,6 @@ func main() {
 }
 
 func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath string, emailListPath string) {
-	fmt.Println("DB_URI: ", config.DBURI())
-	fmt.Println("PATH: ", healthcheckPath)
-
 	healthChecks := healthcheck.ReadYamlFromFile(healthcheckPath)
 	cxn := database.GetPGConnection(config.DBURI())
 	results, _ := healthcheck.PreformHealthChecks(healthChecks, cxn)

@@ -5,7 +5,7 @@ GOFLAGS ?= -v$(GOFLAGS:)
 
 PGHOST ?=localhost
 PGPORT ?=5432
-PGDATABASE ?=my_databaseRi
+PGDATABASE ?=my_database
 PGUSER ?=my_user
 PGPASSWORD ?=my_password
 

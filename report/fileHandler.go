@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"io"
 	"os"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 // FileHandler initilization should contain any variables used for report
@@ -12,7 +14,7 @@ type FileHandler struct {
 }
 
 // HandleReport consumes ReportReader output, writes to file
-func (fr FileHandler) HandleReport(reader io.Reader) error {
+func (fr FileHandler) HandleReport(reader io.Reader) (err error) {
 
 	f, err := os.Create(fr.Filename)
 	w := bufio.NewWriter(f)
@@ -21,11 +23,12 @@ func (fr FileHandler) HandleReport(reader io.Reader) error {
 	for scanner.Scan() {
 		_, err := w.WriteString(scanner.Text() + "\n")
 		if err != nil {
-			// TODO: print Writing error to logger
+			log.Error(err)
 		}
 	}
+
 	if err := scanner.Err(); err != nil {
-		// TODO: print Scanning error to logger
+		log.Error(err)
 	}
 
 	w.Flush()

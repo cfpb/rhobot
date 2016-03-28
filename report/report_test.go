@@ -1,9 +1,17 @@
 package report
 
 import (
-	"fmt"
 	"testing"
+
+	"github.com/cfpb/rhobot/config"
 )
+
+var conf *config.Config
+
+func init() {
+	conf = config.NewConfig()
+	conf.SetLogLevel("info")
+}
 
 type SimpleRE struct {
 	SimpleHeaders []string
@@ -18,7 +26,6 @@ func (sre SimpleRE) GetValue(key string) string {
 }
 
 func TestJSONReport(t *testing.T) {
-	fmt.Println("TestJSONReport")
 	var re Element
 	var rs Set
 	var jrr Runner
@@ -41,7 +48,6 @@ func TestJSONReport(t *testing.T) {
 }
 
 func TestJSONReportToFile(t *testing.T) {
-	fmt.Println("TestJSONReportToFile")
 	var re Element
 	var rs Set
 	var jrr Runner
@@ -64,7 +70,6 @@ func TestJSONReportToFile(t *testing.T) {
 }
 
 func TestPongo2Report(t *testing.T) {
-	fmt.Println("TestPongo2Report")
 	var re Element
 	var rs Set
 	var prr Runner
@@ -83,5 +88,4 @@ func TestPongo2Report(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error writing report\n%s", err)
 	}
-
 }

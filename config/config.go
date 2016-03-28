@@ -2,12 +2,19 @@ package config
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"regexp"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 // Config represents Rhobot's full set of configuration options
 type Config struct {
+	logFormatter log.Formatter
+	logOutput    io.Writer
+	logLevel     log.Level
+
 	pgHost     string
 	pgPort     string
 	PgDatabase string
@@ -26,6 +33,9 @@ type Config struct {
 // NewDefaultConfig creates a new configuration object with default settings
 func NewDefaultConfig() *Config {
 	return &Config{
+		logFormatter: &log.TextFormatter{},
+		logOutput:    os.Stderr,
+		logLevel:     log.InfoLevel,
 		pgHost:       "localhost",
 		pgPort:       "5432",
 		PgDatabase:   "postgres",
@@ -41,52 +51,83 @@ func NewDefaultConfig() *Config {
 // NewConfig creates a new configuration object from environment variables
 func NewConfig() (config *Config) {
 	config = NewDefaultConfig()
+	config.UpdateLogger()
+	log.Debug("Created default configuration.")
 
+	log.Debug("Loading settings from environment variables, when appropriate.")
 	if os.Getenv("PGHOST") != "" {
+		log.Debug("Retrieving value from PGHOST environment variable.")
 		config.pgHost = os.Getenv("PGHOST")
 	}
 
 	if os.Getenv("PGPORT") != "" {
+		log.Debug("Retrieving value from PGPORT environment variable.")
 		config.pgPort = os.Getenv("PGPORT")
 	}
 
 	if os.Getenv("PGDATABASE") != "" {
+		log.Debug("Retrieving value from PGDATABASE environment variable.")
 		config.PgDatabase = os.Getenv("PGDATABASE")
 	}
 
 	if os.Getenv("PGUSER") != "" {
+		log.Debug("Retrieving value from PGUSER environment variable.")
 		config.pgUser = os.Getenv("PGUSER")
 	}
 
-	if os.Getenv("PGDATABASE") != "" {
+	if os.Getenv("PGPASSWORD") != "" {
+		log.Debug("Retrieving value from PGPASSWORD environment variable.")
 		config.pgPassword = os.Getenv("PGPASSWORD")
 	}
 
 	if os.Getenv("GOCDHOST") != "" {
+		log.Debug("Retrieving value from GOCDHOST environment variable.")
 		config.gocdHost = os.Getenv("GOCDHOST")
 	}
 
 	if os.Getenv("GOCDPORT") != "" {
+		log.Debug("Retrieving value from GOCDPORT environment variable.")
 		config.gocdPort = os.Getenv("GOCDPORT")
 	}
 
 	if os.Getenv("GOCDUSER") != "" {
+		log.Debug("Retrieving value from GOCDUSER environment variable.")
 		config.gocdUser = os.Getenv("GOCDUSER")
 	}
 
 	if os.Getenv("GOCDPASSWORD") != "" {
+		log.Debug("Retrieving value from GOCDPASSWORD environment variable.")
 		config.gocdPassword = os.Getenv("GOCDPASSWORD")
 	}
 
 	if os.Getenv("SMTPHOST") != "" {
+		log.Debug("Retrieving value from SMTPHOST environment variable.")
 		config.SMTPHost = os.Getenv("SMTPHOST")
 	}
 
 	if os.Getenv("SMTPPORT") != "" {
+		log.Debug("Retrieving value from SMTPPORT environment variable.")
 		config.SMTPPort = os.Getenv("SMTPPORT")
 	}
 
 	return
+}
+
+// UpdateLogger sets the logger configurtaion based on the Rhobot config
+func (config *Config) UpdateLogger() {
+	log.SetFormatter(config.logFormatter)
+	log.SetOutput(config.logOutput)
+	log.SetLevel(config.logLevel)
+}
+
+// SetLogLevel sets the global log level
+func (config *Config) SetLogLevel(level string) {
+	var err error
+	if config.logLevel, err = log.ParseLevel(level); err != nil {
+		log.Error(err)
+		return
+	}
+	config.UpdateLogger()
 }
 
 // SetDBURI extracts Postgres connection variables from a DB URI
@@ -95,9 +136,9 @@ func (config *Config) SetDBURI(dbURI string) {
 
 	match := dbURIRegex.FindStringSubmatch(dbURI)
 	if match == nil {
-		fmt.Println("Invalid DB URI!")
+		log.Error("Unable to set DB connection parameters, invalid DB URI!")
 	} else if len(match) < 4 {
-		fmt.Println("Too few regex matches with DB URI!")
+		log.Error("Unable to set DB connection parameters, too few regex matches with DB URI!")
 	}
 
 	config.pgUser = match[1]

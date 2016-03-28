@@ -2,22 +2,23 @@ package report
 
 import (
 	"bufio"
-	"fmt"
 	"io"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 // PrintHandler initilization should contain any variables used for report
-type PrintHandler struct {
-}
+type PrintHandler struct{}
 
 // HandleReport consumes ReportReader output, prints to stdout
-func (pr PrintHandler) HandleReport(reader io.Reader) error {
+func (pr PrintHandler) HandleReport(reader io.Reader) (err error) {
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
-		fmt.Printf("%s\n", scanner.Text())
+		log.Infof("%s\n", scanner.Text())
 	}
 	if err := scanner.Err(); err != nil {
-		// TODO: print error to logger
+		log.Error(err)
 	}
-	return nil
+
+	return err
 }
