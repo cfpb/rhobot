@@ -18,7 +18,7 @@ var conf *config.Config
 
 func init() {
 	conf = config.NewConfig()
-	conf.SetLogLevel("debug")
+	conf.SetLogLevel("info")
 
 	buf := bytes.NewBuffer(nil)
 	f, _ := os.Open("./test.json")

@@ -10,7 +10,7 @@ var conf *config.Config
 
 func init() {
 	conf = config.NewConfig()
-	conf.SetLogLevel("debug")
+	conf.SetLogLevel("info")
 }
 
 type SimpleRE struct {
