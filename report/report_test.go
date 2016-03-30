@@ -1,6 +1,8 @@
 package report
 
 import (
+	"fmt"
+	"reflect"
 	"testing"
 
 	"github.com/cfpb/rhobot/config"
@@ -88,4 +90,19 @@ func TestPongo2Report(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error writing report\n%s", err)
 	}
+}
+
+func TestDistributionList(t *testing.T) {
+	df := ReadDistributionFormatYamlFromFile("distributionListTest.yml")
+
+	// using reflection can work for the general use case
+	severityList := reflect.ValueOf(&df.Severity).Elem()
+	severityType := severityList.Type()
+	for i := 0; i < severityList.NumField(); i++ {
+		f := severityList.Field(i)
+		fmt.Printf("%d: %s %s = %v\n", i,
+			severityType.Field(i).Name, f.Type(), f.Interface())
+	}
+
+	df.Print()
 }

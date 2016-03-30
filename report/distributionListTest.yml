@@ -1,0 +1,10 @@
+---
+severity:
+  info:
+    - "dataops@cfpb.gov"
+  debug: []
+  warn:
+   - "someguy@cfpb.gov"
+  error: []
+  fatal:
+    - "frank@cfpb.gov"
