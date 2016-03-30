@@ -93,7 +93,10 @@ func TestPongo2Report(t *testing.T) {
 }
 
 func TestDistributionList(t *testing.T) {
-	df := ReadDistributionFormatYamlFromFile("distributionListTest.yml")
+	df, err := ReadDistributionFormatYAMLFromFile("distributionListTest.yml")
+	if err != nil {
+		t.Fatalf("Failed to read distribution format\n%s", err)
+	}
 
 	// using reflection can work for the general use case
 	severityList := reflect.ValueOf(&df.Severity).Elem()

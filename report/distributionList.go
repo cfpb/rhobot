@@ -3,8 +3,6 @@ package report
 import (
 	"io/ioutil"
 
-	log "github.com/Sirupsen/logrus"
-
 	"github.com/davecgh/go-spew/spew"
 	"gopkg.in/yaml.v2"
 )
@@ -23,23 +21,12 @@ type SeverityDistribution struct {
 	Fatal []string `yaml:"fatal,omitempty"`
 }
 
-func unmarshalDistributionFormat(yamldata []byte) DistributionFormat {
-
-	var data DistributionFormat
-	err := yaml.Unmarshal(yamldata, &data)
-	if err != nil {
-		log.Fatal(err)
+// ReadDistributionFormatYAMLFromFile loads DistributionFormat data from a YAML file
+func ReadDistributionFormatYAMLFromFile(path string) (format DistributionFormat, err error) {
+	if data, err := ioutil.ReadFile(path); err == nil {
+		err = yaml.Unmarshal(data, &format)
 	}
-	return data
-}
-
-// ReadDistributionFormatYamlFromFile loads DistributionFormat data from a YAML file
-func ReadDistributionFormatYamlFromFile(path string) DistributionFormat {
-	data, err := ioutil.ReadFile(path)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return unmarshalDistributionFormat(data)
+	return
 }
 
 // Print the DistributionFormat

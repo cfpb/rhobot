@@ -35,25 +35,12 @@ type HCError struct {
 	Exit bool
 }
 
-func unmarshalHealthChecks(yamldata []byte) Format {
-	var data Format
-
-	err := yaml.Unmarshal(yamldata, &data)
-	if err != nil {
-		log.Fatal(err)
+// ReadHealthCheckYAMLFromFile loads healthcheck data from a YAML file
+func ReadHealthCheckYAMLFromFile(path string) (format Format, err error) {
+	if data, err := ioutil.ReadFile(path); err == nil {
+		err = yaml.Unmarshal(data, &format)
 	}
-
-	// inflate queryfiles
-	return data
-}
-
-// ReadYamlFromFile loads healthcheck data from a YAML file
-func ReadYamlFromFile(path string) Format {
-	data, err := ioutil.ReadFile(path)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return unmarshalHealthChecks(data)
+	return
 }
 
 // RunHealthChecks executes all health checks in the specified file

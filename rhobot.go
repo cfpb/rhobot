@@ -203,7 +203,11 @@ func main() {
 }
 
 func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath string, emailListPath string) {
-	healthChecks := healthcheck.ReadYamlFromFile(healthcheckPath)
+	healthChecks, err := healthcheck.ReadHealthCheckYAMLFromFile(healthcheckPath)
+	if err != nil {
+		log.Fatal("Failed to read healthchecks!")
+	}
+
 	cxn := database.GetPGConnection(config.DBURI())
 	results, _ := healthcheck.PreformHealthChecks(healthChecks, cxn)
 	var elements []report.Element
@@ -232,7 +236,10 @@ func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath
 	if emailListPath != "" {
 
 		SMTPPortInt, _ := strconv.Atoi(config.SMTPPort)
-		df := report.ReadDistributionFormatYamlFromFile(emailListPath)
+		df, err := report.ReadDistributionFormatYAMLFromFile(emailListPath)
+		if err != nil {
+			log.Fatal("Failed to read distribution format!")
+		}
 
 		for _, level := range report.LogLevelArray {
 
