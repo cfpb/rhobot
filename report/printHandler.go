@@ -2,6 +2,7 @@ package report
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 
 	log "github.com/Sirupsen/logrus"
@@ -14,7 +15,7 @@ type PrintHandler struct{}
 func (pr PrintHandler) HandleReport(reader io.Reader) (err error) {
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
-		log.Infof("%s\n", scanner.Text())
+		fmt.Printf("%s\n", scanner.Text())
 	}
 	if err := scanner.Err(); err != nil {
 		log.Error(err)
