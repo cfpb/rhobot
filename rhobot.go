@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -226,19 +228,40 @@ func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath
 		_ = fhr.HandleReport(reader)
 	}
 
-	SMTPPortInt, _ := strconv.Atoi(config.SMTPPort)
-
 	// Email report
 	if emailListPath != "" {
-		ehr := report.EmailHandler{
-			SMTPHost:    config.SMTPHost,
-			SMTPPort:    SMTPPortInt,
-			SenderEmail: "-",
-			SenderName:  "-",
-			Subject:     "-",
-			Recipients:  []string{"-"},
-			HTML:        true,
+
+		SMTPPortInt, _ := strconv.Atoi(config.SMTPPort)
+		df := report.ReadDistributionFormatYamlFromFile(emailListPath)
+
+		for _, level := range report.LogLevelArray {
+
+			// Calculating the subject line
+			hcName := metadata["name"]
+			if hcName == "" {
+				hcName = "healthchecks"
+			}
+			subjectStr := fmt.Sprintf("%s for %s at %s level",
+				hcName, metadata["db_name"], strings.ToUpper(level))
+
+			logFilteredSet := report.FilterReportSet(rs, level)
+			reader, _ := prr.ReportReader(logFilteredSet)
+			recipients := df.GetEmails(level)
+
+			if recipients != nil && len(recipients) != 0 && len(logFilteredSet.Elements) != 0 {
+				log.Infof("Send %s to: %v", subjectStr, recipients)
+				ehr := report.EmailHandler{
+					SMTPHost:    config.SMTPHost,
+					SMTPPort:    SMTPPortInt,
+					SenderEmail: config.SMTPEmail,
+					SenderName:  config.SMTPName,
+					Subject:     subjectStr,
+					Recipients:  recipients,
+					HTML:        true,
+				}
+				_ = ehr.HandleReport(reader)
+			}
 		}
-		_ = ehr.HandleReport(reader)
+
 	}
 }
