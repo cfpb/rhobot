@@ -129,12 +129,11 @@ func main() {
 									group := c.Args().Get(1)
 									log.Infof("Pushing config from %v to pipeline group %v...", path, group)
 									if err := gocd.Push(config.GoCDURL(), path, group); err != nil {
-										log.Error(err)
-										log.Fatal("Failed to push pipeline configuration!")
+										log.Fatal("Failed to push pipeline config: ", err)
 									}
 									log.Info("Success!")
 								} else {
-									log.Fatal("PATH is required for the 'push' command.")
+									log.Fatal("A path to the pipeline config to push is required.")
 								}
 							},
 						},
