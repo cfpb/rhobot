@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -206,8 +205,9 @@ func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath
 	if err != nil {
 		log.Fatal("Failed to read healthchecks!")
 	}
-
 	cxn := database.GetPGConnection(config.DBURI())
+
+	// TODO the error returned from PreformHealthChecks determis a bad exit
 	results, _ := healthcheck.PreformHealthChecks(healthChecks, cxn)
 	var elements []report.Element
 	for _, val := range results {
@@ -221,6 +221,7 @@ func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath
 		"footer":    healthcheck.FooterHealthcheck,
 		"timestamp": time.Now().UTC().String(),
 	}
+
 	prr := report.NewPongo2ReportRunnerFromString(healthcheck.TemplateHealthcheck)
 	rs := report.Set{Elements: elements, Metadata: metadata}
 	reader, _ := prr.ReportReader(rs)
@@ -234,7 +235,6 @@ func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath
 	// Email report
 	if emailListPath != "" {
 
-		SMTPPortInt, _ := strconv.Atoi(config.SMTPPort)
 		df, err := report.ReadDistributionFormatYAMLFromFile(emailListPath)
 		if err != nil {
 			log.Fatal("Failed to read distribution format!")
@@ -242,7 +242,7 @@ func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath
 
 		for _, level := range report.LogLevelArray {
 
-			// Calculating the subject line
+			// TODO calculat a subject line to include hostname, DB, # of failed HCs
 			hcName := metadata["name"]
 			if hcName == "" {
 				hcName = "healthchecks"
@@ -258,7 +258,7 @@ func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath
 				log.Infof("Send %s to: %v", subjectStr, recipients)
 				ehr := report.EmailHandler{
 					SMTPHost:    config.SMTPHost,
-					SMTPPort:    SMTPPortInt,
+					SMTPPort:    config.SMTPPort,
 					SenderEmail: config.SMTPEmail,
 					SenderName:  config.SMTPName,
 					Subject:     subjectStr,
