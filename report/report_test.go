@@ -1,9 +1,10 @@
 package report
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
+
+	log "github.com/Sirupsen/logrus"
 
 	"github.com/cfpb/rhobot/config"
 )
@@ -103,7 +104,7 @@ func TestDistributionList(t *testing.T) {
 	severityType := severityList.Type()
 	for i := 0; i < severityList.NumField(); i++ {
 		f := severityList.Field(i)
-		fmt.Printf("%d: %s %s = %v\n", i,
+		log.Debugf("%d: %s %s = %v\n", i,
 			severityType.Field(i).Name, f.Type(), f.Interface())
 	}
 
