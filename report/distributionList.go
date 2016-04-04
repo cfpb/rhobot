@@ -9,16 +9,13 @@ import (
 
 // DistributionFormat is for unmarshiling a email distributionList file
 type DistributionFormat struct {
-	Severity SeverityDistribution `yaml:"severity"`
-}
-
-// SeverityDistribution list of emails ordered by severity
-type SeverityDistribution struct {
-	Debug []string `yaml:"debug,omitempty"`
-	Info  []string `yaml:"info,omitempty"`
-	Warn  []string `yaml:"warn,omitempty"`
-	Error []string `yaml:"error,omitempty"`
-	Fatal []string `yaml:"fatal,omitempty"`
+	Severity struct {
+		Debug []string `yaml:"debug,omitempty"`
+		Info  []string `yaml:"info,omitempty"`
+		Warn  []string `yaml:"warn,omitempty"`
+		Error []string `yaml:"error,omitempty"`
+		Fatal []string `yaml:"fatal,omitempty"`
+	} `yaml:"severity"`
 }
 
 // ReadDistributionFormatYAMLFromFile loads DistributionFormat data from a YAML file
