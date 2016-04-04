@@ -1,8 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"os"
-	"strconv"
+	"strings"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -127,12 +128,11 @@ func main() {
 									group := c.Args().Get(1)
 									log.Infof("Pushing config from %v to pipeline group %v...", path, group)
 									if err := gocd.Push(config.GoCDURL(), path, group); err != nil {
-										log.Error(err)
-										log.Fatal("Failed to push pipeline configuration!")
+										log.Fatal("Failed to push pipeline config: ", err)
 									}
 									log.Info("Success!")
 								} else {
-									log.Fatal("PATH is required for the 'push' command.")
+									log.Fatal("A path to the pipeline config to push is required.")
 								}
 							},
 						},
@@ -201,8 +201,13 @@ func main() {
 }
 
 func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath string, emailListPath string) {
-	healthChecks := healthcheck.ReadYamlFromFile(healthcheckPath)
+	healthChecks, err := healthcheck.ReadHealthCheckYAMLFromFile(healthcheckPath)
+	if err != nil {
+		log.Fatal("Failed to read healthchecks: ", err)
+	}
 	cxn := database.GetPGConnection(config.DBURI())
+
+	// TODO the error returned from PreformHealthChecks determis a bad exit
 	results, _ := healthcheck.PreformHealthChecks(healthChecks, cxn)
 	var elements []report.Element
 	for _, val := range results {
@@ -216,6 +221,7 @@ func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath
 		"footer":    healthcheck.FooterHealthcheck,
 		"timestamp": time.Now().UTC().String(),
 	}
+
 	prr := report.NewPongo2ReportRunnerFromString(healthcheck.TemplateHealthcheck)
 	rs := report.Set{Elements: elements, Metadata: metadata}
 	reader, _ := prr.ReportReader(rs)
@@ -226,19 +232,45 @@ func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath
 		_ = fhr.HandleReport(reader)
 	}
 
-	SMTPPortInt, _ := strconv.Atoi(config.SMTPPort)
-
 	// Email report
 	if emailListPath != "" {
-		ehr := report.EmailHandler{
-			SMTPHost:    config.SMTPHost,
-			SMTPPort:    SMTPPortInt,
-			SenderEmail: "-",
-			SenderName:  "-",
-			Subject:     "-",
-			Recipients:  []string{"-"},
-			HTML:        true,
+
+		df, err := report.ReadDistributionFormatYAMLFromFile(emailListPath)
+		if err != nil {
+			log.Fatal("Failed to read distribution format: ", err)
 		}
-		_ = ehr.HandleReport(reader)
+
+		for _, level := range report.LogLevelArray {
+
+			// TODO calculate a subject line to include hostname, DB, # of failed HCs
+			hcName := metadata["name"]
+			if hcName == "" {
+				hcName = "healthchecks"
+			}
+			subjectStr := fmt.Sprintf("%s for %s at %s level",
+				hcName, metadata["db_name"], strings.ToUpper(level))
+
+			logFilteredSet := report.FilterReportSet(rs, level)
+			reader, _ := prr.ReportReader(logFilteredSet)
+			recipients := df.GetEmails(level)
+
+			if recipients != nil && len(recipients) != 0 && len(logFilteredSet.Elements) != 0 {
+				log.Infof("Send %s to: %v", subjectStr, recipients)
+				ehr := report.EmailHandler{
+					SMTPHost:    config.SMTPHost,
+					SMTPPort:    config.SMTPPort,
+					SenderEmail: config.SMTPEmail,
+					SenderName:  config.SMTPName,
+					Subject:     subjectStr,
+					Recipients:  recipients,
+					HTML:        true,
+				}
+				err = ehr.HandleReport(reader)
+				if err != nil {
+					log.Warn("Failed to email report: ", err)
+				}
+			}
+		}
+
 	}
 }

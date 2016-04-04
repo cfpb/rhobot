@@ -1,7 +1,10 @@
 package report
 
 import (
+	"reflect"
 	"testing"
+
+	log "github.com/Sirupsen/logrus"
 
 	"github.com/cfpb/rhobot/config"
 )
@@ -88,4 +91,22 @@ func TestPongo2Report(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error writing report\n%s", err)
 	}
+}
+
+func TestDistributionList(t *testing.T) {
+	df, err := ReadDistributionFormatYAMLFromFile("distributionListTest.yml")
+	if err != nil {
+		t.Fatalf("Failed to read distribution format\n%s", err)
+	}
+
+	// using reflection can work for the general use case
+	severityList := reflect.ValueOf(&df.Severity).Elem()
+	severityType := severityList.Type()
+	for i := 0; i < severityList.NumField(); i++ {
+		f := severityList.Field(i)
+		log.Debugf("%d: %s %s = %v\n", i,
+			severityType.Field(i).Name, f.Type(), f.Interface())
+	}
+
+	df.Print()
 }

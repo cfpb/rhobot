@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"io"
 	"io/ioutil"
+	"strconv"
 
 	log "github.com/Sirupsen/logrus"
 	"gopkg.in/gomail.v2"
@@ -12,7 +13,7 @@ import (
 // EmailHandler initilization should contain any variables used for report
 type EmailHandler struct {
 	SMTPHost    string
-	SMTPPort    int
+	SMTPPort    string
 	SenderEmail string
 	SenderName  string
 	Recipients  []string
@@ -51,7 +52,8 @@ func (eh EmailHandler) HandleReport(reader io.Reader) (err error) {
 	reportString := string(reportBytes)
 	msg.SetBody(bodyType, reportString)
 
-	dialer := gomail.Dialer{Host: eh.SMTPHost, Port: eh.SMTPPort}
+	SMTPPortInt, _ := strconv.Atoi(eh.SMTPPort)
+	dialer := gomail.Dialer{Host: eh.SMTPHost, Port: SMTPPortInt}
 	dialer.TLSConfig = &tls.Config{InsecureSkipVerify: true}
 	if err := dialer.DialAndSend(msg); err != nil {
 		log.Error(err)

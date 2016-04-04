@@ -35,25 +35,12 @@ type HCError struct {
 	Exit bool
 }
 
-func unmarshalHealthChecks(yamldata []byte) Format {
-	var data Format
-
-	err := yaml.Unmarshal(yamldata, &data)
-	if err != nil {
-		log.Fatal(err)
+// ReadHealthCheckYAMLFromFile loads healthcheck data from a YAML file
+func ReadHealthCheckYAMLFromFile(path string) (format Format, err error) {
+	if data, err := ioutil.ReadFile(path); err == nil {
+		err = yaml.Unmarshal(data, &format)
 	}
-
-	// inflate queryfiles
-	return data
-}
-
-// ReadYamlFromFile loads healthcheck data from a YAML file
-func ReadYamlFromFile(path string) Format {
-	data, err := ioutil.ReadFile(path)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return unmarshalHealthChecks(data)
+	return
 }
 
 // RunHealthChecks executes all health checks in the specified file
@@ -155,7 +142,7 @@ func EvaluateHealthCheck(healthCheck SQLHealthCheck) (err HCError) {
 // Implementation of report.Element
 
 // HealthCheckReportHeaders headers used for GetHeaders
-var HealthCheckReportHeaders = []string{"Title", "Query", "Passed", "Expected", "Actual"}
+var HealthCheckReportHeaders = []string{"Title", "Query", "Passed", "Expected", "Actual", "Severity"}
 
 // GetHeaders Implementation for report.Element
 func (hcr SQLHealthCheck) GetHeaders() []string {
@@ -178,6 +165,8 @@ func (hcr SQLHealthCheck) GetValue(key string) string {
 		return hcr.Expected
 	case HealthCheckReportHeaders[4]:
 		return hcr.Actual
+	case HealthCheckReportHeaders[5]:
+		return hcr.Severity
 	}
 	return ""
 }
