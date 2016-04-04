@@ -242,7 +242,7 @@ func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath
 
 		for _, level := range report.LogLevelArray {
 
-			// TODO calculat a subject line to include hostname, DB, # of failed HCs
+			// TODO calculate a subject line to include hostname, DB, # of failed HCs
 			hcName := metadata["name"]
 			if hcName == "" {
 				hcName = "healthchecks"
