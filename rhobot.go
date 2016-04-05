@@ -61,9 +61,7 @@ func main() {
 				emailListFlag,
 			},
 			Action: func(c *cli.Context) {
-				if c.String("loglevel") != "" {
-					config.SetLogLevel(c.String("loglevel"))
-				}
+				updateLogLevel(c, config)
 
 				// variables to be populated by cli args
 				var healthcheckPath string
@@ -109,9 +107,7 @@ func main() {
 						gocdHostFlag,
 					},
 					Action: func(c *cli.Context) {
-						if c.String("loglevel") != "" {
-							config.SetLogLevel(c.String("loglevel"))
-						}
+						updateLogLevel(c, config)
 
 						if c.String("host") != "" {
 							log.Debug("Setting GoCD host: ", c.String("host"))
@@ -138,9 +134,7 @@ func main() {
 						gocdHostFlag,
 					},
 					Action: func(c *cli.Context) {
-						if c.String("loglevel") != "" {
-							config.SetLogLevel(c.String("loglevel"))
-						}
+						updateLogLevel(c, config)
 
 						if c.String("host") != "" {
 							config.SetGoCDHost(c.String("host"))
@@ -165,9 +159,7 @@ func main() {
 						gocdHostFlag,
 					},
 					Action: func(c *cli.Context) {
-						if c.String("loglevel") != "" {
-							config.SetLogLevel(c.String("loglevel"))
-						}
+						updateLogLevel(c, config)
 
 						if c.String("host") != "" {
 							config.SetGoCDHost(c.String("host"))
@@ -193,6 +185,12 @@ func main() {
 	app.Run(os.Args)
 }
 
+func updateLogLevel(c *cli.Context, config *config.Config) {
+	if c.GlobalString("loglevel") != "" {
+		config.SetLogLevel(c.GlobalString("loglevel"))
+	}
+}
+
 func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath string, emailListPath string) {
 	healthChecks, err := healthcheck.ReadHealthCheckYAMLFromFile(healthcheckPath)
 	if err != nil {
@@ -201,7 +199,10 @@ func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath
 	cxn := database.GetPGConnection(config.DBURI())
 
 	// TODO the error returned from PreformHealthChecks determis a bad exit
-	results, _ := healthcheck.PreformHealthChecks(healthChecks, cxn)
+	results, HCerr := healthcheck.PreformHealthChecks(healthChecks, cxn)
+	if HCerr != nil {
+		log.Fatal("Failed to read healthchecks: ", HCerr)
+	}
 	var elements []report.Element
 	for _, val := range results {
 		elements = append(elements, val)
