@@ -1,14 +1,8 @@
 package healthcheck
 
 import (
-	"bytes"
-	"io"
-	"os"
-	"reflect"
 	"testing"
 	"time"
-
-	"gopkg.in/yaml.v2"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/cfpb/rhobot/config"
@@ -16,42 +10,35 @@ import (
 	"github.com/cfpb/rhobot/report"
 )
 
-var healthchecks []byte
 var conf *config.Config
 
 func init() {
 	conf = config.NewConfig()
-
-	buf := bytes.NewBuffer(nil)
-	f, _ := os.Open("healthchecksTest.yml")
-	io.Copy(buf, f)
-	f.Close()
-	healthchecks = buf.Bytes()
 }
 
 func TestUnmarshal(t *testing.T) {
-	unmarshalHealthChecks(healthchecks)
+	format, err := ReadHealthCheckYAMLFromFile("healthchecksTest.yml")
+	if err != nil || format.Name != "rhobot healthcheck test" {
+		t.Error("could not read file")
+	}
 }
 
-// TestUnmarshalFidelityLoss checks that data can be reserielized without fidelity loss
-func TestUnmarshalFidelityLoss(t *testing.T) {
-	data := unmarshalHealthChecks(healthchecks)
-	healthchecks2, _ := yaml.Marshal(data)
-	data2 := unmarshalHealthChecks(healthchecks2)
-	if !reflect.DeepEqual(data, data2) {
-		t.Error("not the same")
+func TestFileNotFound(t *testing.T) {
+	_, err := ReadHealthCheckYAMLFromFile("should_not_exist.yml")
+	if err == nil {
+		t.Error("did not throw error as should have")
 	}
 }
 
 func TestRunningBasicChecks(t *testing.T) {
 	cxn := database.GetPGConnection(conf.DBURI())
-	healthChecks := unmarshalHealthChecks(healthchecks)
+	healthChecks, _ := ReadHealthCheckYAMLFromFile("healthchecksTest.yml")
 	RunHealthChecks(healthChecks, cxn)
 }
 
 func TestEvaluatingBasicChecks(t *testing.T) {
 	cxn := database.GetPGConnection(conf.DBURI())
-	healthChecks := unmarshalHealthChecks(healthchecks)
+	healthChecks, _ := ReadHealthCheckYAMLFromFile("healthchecksTest.yml")
 	healthChecks = RunHealthChecks(healthChecks, cxn)
 	results, err := EvaluateHealthChecks(healthChecks)
 
@@ -67,7 +54,7 @@ func TestEvaluatingBasicChecks(t *testing.T) {
 
 func TestEvaluatingErrorsChecks(t *testing.T) {
 	cxn := database.GetPGConnection(conf.DBURI())
-	healthChecks := ReadYamlFromFile("healthchecksErrors.yml")
+	healthChecks, _ := ReadHealthCheckYAMLFromFile("healthchecksErrors.yml")
 	healthChecks = RunHealthChecks(healthChecks, cxn)
 	results, err := EvaluateHealthChecks(healthChecks)
 
@@ -83,7 +70,7 @@ func TestEvaluatingErrorsChecks(t *testing.T) {
 
 func TestEvaluatingFatalChecks(t *testing.T) {
 	cxn := database.GetPGConnection(conf.DBURI())
-	healthChecks := ReadYamlFromFile("healthchecksFatal.yml")
+	healthChecks, _ := ReadHealthCheckYAMLFromFile("healthchecksFatal.yml")
 	healthChecks = RunHealthChecks(healthChecks, cxn)
 	results, err := EvaluateHealthChecks(healthChecks)
 
@@ -100,7 +87,7 @@ func TestEvaluatingFatalChecks(t *testing.T) {
 
 func TestPreformAllChecks(t *testing.T) {
 	cxn := database.GetPGConnection(conf.DBURI())
-	healthChecks := ReadYamlFromFile("healthchecksAll.yml")
+	healthChecks, _ := ReadHealthCheckYAMLFromFile("healthchecksAll.yml")
 	results, err := PreformHealthChecks(healthChecks, cxn)
 
 	if err == nil {
