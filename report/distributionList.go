@@ -20,7 +20,8 @@ type DistributionFormat struct {
 
 // ReadDistributionFormatYAMLFromFile loads DistributionFormat data from a YAML file
 func ReadDistributionFormatYAMLFromFile(path string) (format DistributionFormat, err error) {
-	if data, err := ioutil.ReadFile(path); err == nil {
+	data, err := ioutil.ReadFile(path)
+	if err == nil {
 		err = yaml.Unmarshal(data, &format)
 	}
 	return

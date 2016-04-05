@@ -81,7 +81,8 @@ type Pipeline struct {
 
 // readPipelineJSONFromFile reads a GoCD structure from a json file
 func readPipelineJSONFromFile(path string) (pipeline Pipeline, err error) {
-	if data, err := ioutil.ReadFile(path); err == nil {
+	data, err := ioutil.ReadFile(path)
+	if err == nil {
 		err = json.Unmarshal(data, &pipeline)
 	}
 	return
