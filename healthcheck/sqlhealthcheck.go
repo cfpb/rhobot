@@ -37,7 +37,8 @@ type HCError struct {
 
 // ReadHealthCheckYAMLFromFile loads healthcheck data from a YAML file
 func ReadHealthCheckYAMLFromFile(path string) (format Format, err error) {
-	if data, err := ioutil.ReadFile(path); err == nil {
+	data, err := ioutil.ReadFile(path)
+	if err == nil {
 		err = yaml.Unmarshal(data, &format)
 	}
 	return
