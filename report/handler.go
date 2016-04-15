@@ -1,14 +1,66 @@
 package report
 
 import (
+	"bufio"
 	"crypto/tls"
+	"fmt"
 	"io"
 	"io/ioutil"
+	"os"
 	"strconv"
 
 	log "github.com/Sirupsen/logrus"
 	"gopkg.in/gomail.v2"
 )
+
+// Handler interface for anything able to consume a report
+type Handler interface {
+	HandleReport(io.Reader) error
+}
+
+// PrintHandler initilization should contain any variables used for report
+type PrintHandler struct{}
+
+// HandleReport consumes ReportReader output, prints to stdout
+func (pr PrintHandler) HandleReport(reader io.Reader) (err error) {
+	scanner := bufio.NewScanner(reader)
+	for scanner.Scan() {
+		fmt.Printf("%s\n", scanner.Text())
+	}
+	if err := scanner.Err(); err != nil {
+		log.Error(err)
+	}
+
+	return err
+}
+
+// FileHandler initilization should contain any variables used for report
+type FileHandler struct {
+	Filename string
+}
+
+// HandleReport consumes ReportReader output, writes to file
+func (fr FileHandler) HandleReport(reader io.Reader) (err error) {
+
+	f, err := os.Create(fr.Filename)
+	w := bufio.NewWriter(f)
+
+	scanner := bufio.NewScanner(reader)
+	for scanner.Scan() {
+		_, err := w.WriteString(scanner.Text() + "\n")
+		if err != nil {
+			log.Error(err)
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		log.Error(err)
+	}
+
+	w.Flush()
+
+	return err
+}
 
 // EmailHandler initilization should contain any variables used for report
 type EmailHandler struct {
