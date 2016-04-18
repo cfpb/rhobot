@@ -199,7 +199,7 @@ func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath
 	cxn := database.GetPGConnection(config.DBURI())
 
 	// TODO the error returned from PreformHealthChecks determis a bad exit
-	results, HCerr := healthcheck.PreformHealthChecks(healthChecks, cxn)
+	results, HCerr := healthChecks.PreformHealthChecks(cxn)
 	if HCerr != nil {
 		log.Fatal("Failed to read healthchecks: ", HCerr)
 	}

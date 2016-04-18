@@ -20,7 +20,7 @@ func init() {
 func TestLogLevelingFiltering(t *testing.T) {
 	cxn := database.GetPGConnection(conf.DBURI())
 	healthChecks, _ := healthcheck.ReadHealthCheckYAMLFromFile("healthcheck/healthchecksAll.yml")
-	results, _ := healthcheck.PreformHealthChecks(healthChecks, cxn)
+	results, _ := healthChecks.PreformHealthChecks(cxn)
 	var elements []report.Element
 	for _, val := range results {
 		elements = append(elements, val)
