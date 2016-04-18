@@ -15,10 +15,13 @@ import (
 
 var gocdPipelineConfig []byte
 var conf *config.Config
+var server *Server
 
 func init() {
 	conf = config.NewConfig()
 	conf.SetLogLevel("info")
+
+	server = NewServerConfig(conf)
 
 	buf := bytes.NewBuffer(nil)
 	f, _ := os.Open("./test.json")
@@ -57,7 +60,7 @@ func TestUnmarshalFidelityLoss(t *testing.T) {
 }
 
 func TestGocdPOST(t *testing.T) {
-	etag, err := Exist(conf.GoCDURL(), "test")
+	etag, err := Exist(server, "test")
 	if err == nil && etag != "" {
 		log.Info("Cannot run TestGoCDPOST, 'test' pipeline already exists.")
 		t.SkipNow()
@@ -66,21 +69,21 @@ func TestGocdPOST(t *testing.T) {
 	pipeline, _ := readPipelineJSONFromFile("./test.json")
 	pipelineConfig := PipelineConfig{"Dev", pipeline}
 
-	_, err = pipelineConfigPOST(conf.GoCDURL(), pipelineConfig)
+	_, err = server.pipelineConfigPOST(pipelineConfig)
 	if err != nil {
 		t.Error(err)
 	}
 }
 
 func TestGocdGET(t *testing.T) {
-	_, _, err := pipelineGET(conf.GoCDURL(), "test")
+	_, _, err := server.pipelineGET("test")
 	if err != nil {
 		t.Error(err)
 	}
 }
 
 func TestExist(t *testing.T) {
-	etag, err := Exist(conf.GoCDURL(), "test")
+	etag, err := Exist(server, "test")
 
 	if err != nil {
 		t.Error(err)
@@ -92,7 +95,7 @@ func TestExist(t *testing.T) {
 }
 
 func TestGocdPUT(t *testing.T) {
-	pipeline, etag, _ := pipelineGET(conf.GoCDURL(), "test")
+	pipeline, etag, _ := server.pipelineGET("test")
 
 	// The Index of the STRANGE Environment Variable could potentially change between update
 	strangeIndex := -1
@@ -108,18 +111,18 @@ func TestGocdPUT(t *testing.T) {
 	}
 
 	//Update Original Value to Time Value
-	pipeline, etag, _ = pipelineGET(conf.GoCDURL(), "test")
+	pipeline, etag, _ = server.pipelineGET("test")
 	strangeEnvVarA := pipeline.EnvironmentVariables[strangeIndex]
 	pipeline.EnvironmentVariables[strangeIndex].Value = time.Now().UTC().String()
-	pipeline, _ = pipelineConfigPUT(conf.GoCDURL(), pipeline, etag)
+	pipeline, _ = server.pipelineConfigPUT(pipeline, etag)
 
 	//Update Time Value to Original Value
-	pipeline, etag, _ = pipelineGET(conf.GoCDURL(), "test")
+	pipeline, etag, _ = server.pipelineGET("test")
 	strangeEnvVarB := pipeline.EnvironmentVariables[strangeIndex]
 	pipeline.EnvironmentVariables[strangeIndex].Value = strangeEnvVarA.Value
-	pipeline, _ = pipelineConfigPUT(conf.GoCDURL(), pipeline, etag)
+	pipeline, _ = server.pipelineConfigPUT(pipeline, etag)
 
-	pipeline, etag, _ = pipelineGET(conf.GoCDURL(), "test")
+	pipeline, etag, _ = server.pipelineGET("test")
 	strangeEnvVarC := pipeline.EnvironmentVariables[strangeIndex]
 	log.Debugf("STRANGE VALUE A: %+v\n", strangeEnvVarA)
 	log.Debugf("STRANGE VALUE B: %+v\n", strangeEnvVarB)

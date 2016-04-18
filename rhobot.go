@@ -108,17 +108,14 @@ func main() {
 					},
 					Action: func(c *cli.Context) {
 						updateLogLevel(c, config)
-
-						if c.String("host") != "" {
-							log.Debug("Setting GoCD host: ", c.String("host"))
-							config.SetGoCDHost(c.String("host"))
-						}
+						updateGOCDHost(c, config)
+						gocdServer := gocd.NewServerConfig(config)
 
 						if len(c.Args()) > 0 {
 							path := c.Args()[0]
 							group := c.Args().Get(1)
 							log.Infof("Pushing config from %v to pipeline group %v...", path, group)
-							if err := gocd.Push(config.GoCDURL(), path, group); err != nil {
+							if err := gocd.Push(gocdServer, path, group); err != nil {
 								log.Fatal("Failed to push pipeline config: ", err)
 							}
 							log.Info("Success!")
@@ -135,15 +132,13 @@ func main() {
 					},
 					Action: func(c *cli.Context) {
 						updateLogLevel(c, config)
-
-						if c.String("host") != "" {
-							config.SetGoCDHost(c.String("host"))
-						}
+						updateGOCDHost(c, config)
+						gocdServer := gocd.NewServerConfig(config)
 
 						if len(c.Args()) > 0 {
 							path := c.Args()[0]
-							log.Infof("Pulling config from %v to %v...", config.GoCDURL(), path)
-							if err := gocd.Pull(config.GoCDURL(), path); err != nil {
+							log.Infof("Pulling config from %v to %v...", gocdServer.GoCDURL(), path)
+							if err := gocd.Pull(gocdServer, path); err != nil {
 								log.Fatal("Failed to pull pipeline config: ", err)
 							}
 							log.Info("Success!")
@@ -160,16 +155,14 @@ func main() {
 					},
 					Action: func(c *cli.Context) {
 						updateLogLevel(c, config)
-
-						if c.String("host") != "" {
-							config.SetGoCDHost(c.String("host"))
-						}
+						updateGOCDHost(c, config)
+						gocdServer := gocd.NewServerConfig(config)
 
 						if len(c.Args()) > 1 {
 							name := c.Args()[0]
 							path := c.Args()[1]
 							log.Infof("Cloning pipeline %v to %v...", name, path)
-							if err := gocd.Clone(config.GoCDURL(), path, name); err != nil {
+							if err := gocd.Clone(gocdServer, path, name); err != nil {
 								log.Fatal("Failed to clone pipeline config: ", err)
 							}
 							log.Info("Success!")
@@ -188,6 +181,12 @@ func main() {
 func updateLogLevel(c *cli.Context, config *config.Config) {
 	if c.GlobalString("loglevel") != "" {
 		config.SetLogLevel(c.GlobalString("loglevel"))
+	}
+}
+
+func updateGOCDHost(c *cli.Context, config *config.Config) {
+	if c.String("host") != "" {
+		config.SetGoCDHost(c.String("host"))
 	}
 }
 
