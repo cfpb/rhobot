@@ -21,7 +21,7 @@ func init() {
 	conf = config.NewConfig()
 	conf.SetLogLevel("info")
 
-	server = NewServerConfig(conf)
+	server = NewServerConfig(conf.GOCDHost, conf.GOCDPort, conf.GOCDUser, conf.GOCDPassword)
 
 	buf := bytes.NewBuffer(nil)
 	f, _ := os.Open("./test.json")
