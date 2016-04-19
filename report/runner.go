@@ -2,11 +2,26 @@ package report
 
 import (
 	"bytes"
+	"encoding/json"
 	"io"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/flosch/pongo2"
 )
+
+// JSONReportRunner initilization should contain any variables used for report
+type JSONReportRunner struct{}
+
+// ReportReader Implementation for ReportRunner
+func (jrr JSONReportRunner) ReportReader(reportSet Set) (io.Reader, error) {
+	reportJSON, err := json.MarshalIndent(reportSet.GetReportMap(), "", "    ")
+	if err != nil {
+		log.Fatal(err)
+	}
+	r := bytes.NewReader(reportJSON)
+	log.Debug(string(reportJSON))
+	return r, err
+}
 
 // NewPongo2ReportRunnerFromFile constructor with template file
 func NewPongo2ReportRunnerFromFile(TemplateFilePath string) *Pongo2ReportRunner {

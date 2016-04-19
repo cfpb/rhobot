@@ -22,7 +22,8 @@ func main() {
 	app.Usage = "Rhobot is a database development tool that uses DevOps best practices."
 	app.EnableBashCompletion = true
 
-	config := config.NewConfig()
+	conf := config.NewConfig()
+	gocdServer := gocd.NewServerConfig(conf.GOCDHost, conf.GOCDPort, conf.GOCDUser, conf.GOCDPassword)
 
 	logLevelFlag := cli.StringFlag{
 		Name:  "loglevel, lvl",
@@ -61,7 +62,7 @@ func main() {
 				emailListFlag,
 			},
 			Action: func(c *cli.Context) {
-				updateLogLevel(c, config)
+				updateLogLevel(c, conf)
 
 				// variables to be populated by cli args
 				var healthcheckPath string
@@ -77,9 +78,9 @@ func main() {
 				log.Info("Running health checks from ", healthcheckPath)
 
 				if c.String("dburi") != "" {
-					config.SetDBURI(c.String("dburi"))
+					conf.SetDBURI(c.String("dburi"))
 				}
-				log.Debug("DB_URI: ", config.DBURI())
+				log.Debug("DB_URI: ", conf.DBURI())
 
 				if c.String("report") != "" {
 					reportPath = c.String("report")
@@ -91,7 +92,7 @@ func main() {
 					log.Debugf("Emailing report to %v", emailListPath)
 				}
 
-				healthcheckRunner(config, healthcheckPath, reportPath, emailListPath)
+				healthcheckRunner(conf, healthcheckPath, reportPath, emailListPath)
 				log.Info("Success!")
 			},
 		},
@@ -107,18 +108,14 @@ func main() {
 						gocdHostFlag,
 					},
 					Action: func(c *cli.Context) {
-						updateLogLevel(c, config)
-
-						if c.String("host") != "" {
-							log.Debug("Setting GoCD host: ", c.String("host"))
-							config.SetGoCDHost(c.String("host"))
-						}
+						updateLogLevel(c, conf)
+						updateGOCDHost(c, conf, gocdServer)
 
 						if len(c.Args()) > 0 {
 							path := c.Args()[0]
 							group := c.Args().Get(1)
 							log.Infof("Pushing config from %v to pipeline group %v...", path, group)
-							if err := gocd.Push(config.GoCDURL(), path, group); err != nil {
+							if err := gocd.Push(gocdServer, path, group); err != nil {
 								log.Fatal("Failed to push pipeline config: ", err)
 							}
 							log.Info("Success!")
@@ -134,16 +131,13 @@ func main() {
 						gocdHostFlag,
 					},
 					Action: func(c *cli.Context) {
-						updateLogLevel(c, config)
-
-						if c.String("host") != "" {
-							config.SetGoCDHost(c.String("host"))
-						}
+						updateLogLevel(c, conf)
+						updateGOCDHost(c, conf, gocdServer)
 
 						if len(c.Args()) > 0 {
 							path := c.Args()[0]
-							log.Infof("Pulling config from %v to %v...", config.GoCDURL(), path)
-							if err := gocd.Pull(config.GoCDURL(), path); err != nil {
+							log.Infof("Pulling config from %v to %v...", gocdServer.URL(), path)
+							if err := gocd.Pull(gocdServer, path); err != nil {
 								log.Fatal("Failed to pull pipeline config: ", err)
 							}
 							log.Info("Success!")
@@ -159,17 +153,14 @@ func main() {
 						gocdHostFlag,
 					},
 					Action: func(c *cli.Context) {
-						updateLogLevel(c, config)
-
-						if c.String("host") != "" {
-							config.SetGoCDHost(c.String("host"))
-						}
+						updateLogLevel(c, conf)
+						updateGOCDHost(c, conf, gocdServer)
 
 						if len(c.Args()) > 1 {
 							name := c.Args()[0]
 							path := c.Args()[1]
 							log.Infof("Cloning pipeline %v to %v...", name, path)
-							if err := gocd.Clone(config.GoCDURL(), path, name); err != nil {
+							if err := gocd.Clone(gocdServer, path, name); err != nil {
 								log.Fatal("Failed to clone pipeline config: ", err)
 							}
 							log.Info("Success!")
@@ -191,6 +182,13 @@ func updateLogLevel(c *cli.Context, config *config.Config) {
 	}
 }
 
+func updateGOCDHost(c *cli.Context, config *config.Config, gocdServer *gocd.Server) {
+	if c.String("host") != "" {
+		config.SetGoCDHost(c.String("host"))
+	}
+	gocdServer = gocd.NewServerConfig(config.GOCDHost, config.GOCDPort, config.GOCDUser, config.GOCDPassword)
+}
+
 func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath string, emailListPath string) {
 	healthChecks, err := healthcheck.ReadHealthCheckYAMLFromFile(healthcheckPath)
 	if err != nil {
@@ -199,7 +197,7 @@ func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath
 	cxn := database.GetPGConnection(config.DBURI())
 
 	// TODO the error returned from PreformHealthChecks determis a bad exit
-	results, HCerr := healthcheck.PreformHealthChecks(healthChecks, cxn)
+	results, HCerr := healthChecks.PreformHealthChecks(cxn)
 	if HCerr != nil {
 		log.Fatal("Failed to read healthchecks: ", HCerr)
 	}

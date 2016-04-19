@@ -21,10 +21,10 @@ type Config struct {
 	pgUser     string
 	pgPassword string
 
-	gocdHost     string
-	gocdPort     string
-	gocdUser     string
-	gocdPassword string
+	GOCDHost     string
+	GOCDPort     string
+	GOCDUser     string
+	GOCDPassword string
 
 	SMTPHost  string
 	SMTPPort  string
@@ -43,10 +43,10 @@ func NewDefaultConfig() *Config {
 		PgDatabase:   "postgres",
 		pgUser:       "postgres",
 		pgPassword:   "password",
-		gocdHost:     "http://localhost",
-		gocdPort:     "8153",
-		gocdUser:     "admin",
-		gocdPassword: "password",
+		GOCDHost:     "http://localhost",
+		GOCDPort:     "8153",
+		GOCDUser:     "admin",
+		GOCDPassword: "password",
 		SMTPHost:     "localhost",
 		SMTPPort:     "25",
 		SMTPEmail:    "admin@localhost",
@@ -88,22 +88,22 @@ func NewConfig() (config *Config) {
 
 	if os.Getenv("GOCDHOST") != "" {
 		log.Debug("Retrieving value from GOCDHOST environment variable.")
-		config.gocdHost = os.Getenv("GOCDHOST")
+		config.GOCDHost = os.Getenv("GOCDHOST")
 	}
 
 	if os.Getenv("GOCDPORT") != "" {
 		log.Debug("Retrieving value from GOCDPORT environment variable.")
-		config.gocdPort = os.Getenv("GOCDPORT")
+		config.GOCDPort = os.Getenv("GOCDPORT")
 	}
 
 	if os.Getenv("GOCDUSER") != "" {
 		log.Debug("Retrieving value from GOCDUSER environment variable.")
-		config.gocdUser = os.Getenv("GOCDUSER")
+		config.GOCDUser = os.Getenv("GOCDUSER")
 	}
 
 	if os.Getenv("GOCDPASSWORD") != "" {
 		log.Debug("Retrieving value from GOCDPASSWORD environment variable.")
-		config.gocdPassword = os.Getenv("GOCDPASSWORD")
+		config.GOCDPassword = os.Getenv("GOCDPASSWORD")
 	}
 
 	if os.Getenv("SMTPHOST") != "" {
@@ -177,10 +177,5 @@ func (config *Config) DBURI() (dbURI string) {
 
 // SetGoCDHost sets the host value of the GoCD server
 func (config *Config) SetGoCDHost(host string) {
-	config.gocdHost = host
-}
-
-// GoCDURL returns the host of the GoCD server
-func (config *Config) GoCDURL() string {
-	return fmt.Sprintf("%s:%s", config.gocdHost, config.gocdPort)
+	config.GOCDHost = host
 }

@@ -33,14 +33,14 @@ func TestFileNotFound(t *testing.T) {
 func TestRunningBasicChecks(t *testing.T) {
 	cxn := database.GetPGConnection(conf.DBURI())
 	healthChecks, _ := ReadHealthCheckYAMLFromFile("healthchecksTest.yml")
-	RunHealthChecks(healthChecks, cxn)
+	healthChecks.RunHealthChecks(cxn)
 }
 
 func TestEvaluatingBasicChecks(t *testing.T) {
 	cxn := database.GetPGConnection(conf.DBURI())
 	healthChecks, _ := ReadHealthCheckYAMLFromFile("healthchecksTest.yml")
-	healthChecks = RunHealthChecks(healthChecks, cxn)
-	results, err := EvaluateHealthChecks(healthChecks)
+	healthChecks.RunHealthChecks(cxn)
+	results, err := healthChecks.EvaluateHealthChecks()
 
 	if err != nil {
 		log.Error(err)
@@ -55,8 +55,8 @@ func TestEvaluatingBasicChecks(t *testing.T) {
 func TestEvaluatingErrorsChecks(t *testing.T) {
 	cxn := database.GetPGConnection(conf.DBURI())
 	healthChecks, _ := ReadHealthCheckYAMLFromFile("healthchecksErrors.yml")
-	healthChecks = RunHealthChecks(healthChecks, cxn)
-	results, err := EvaluateHealthChecks(healthChecks)
+	healthChecks.RunHealthChecks(cxn)
+	results, err := healthChecks.EvaluateHealthChecks()
 
 	if err == nil {
 		log.Error("Healthchecks did not throw an error, but should have")
@@ -71,8 +71,8 @@ func TestEvaluatingErrorsChecks(t *testing.T) {
 func TestEvaluatingFatalChecks(t *testing.T) {
 	cxn := database.GetPGConnection(conf.DBURI())
 	healthChecks, _ := ReadHealthCheckYAMLFromFile("healthchecksFatal.yml")
-	healthChecks = RunHealthChecks(healthChecks, cxn)
-	results, err := EvaluateHealthChecks(healthChecks)
+	healthChecks.RunHealthChecks(cxn)
+	results, err := healthChecks.EvaluateHealthChecks()
 
 	if err == nil {
 		log.Error("Healthchecks did not throw an error, but should have")
@@ -88,7 +88,7 @@ func TestEvaluatingFatalChecks(t *testing.T) {
 func TestPreformAllChecks(t *testing.T) {
 	cxn := database.GetPGConnection(conf.DBURI())
 	healthChecks, _ := ReadHealthCheckYAMLFromFile("healthchecksAll.yml")
-	results, err := PreformHealthChecks(healthChecks, cxn)
+	results, err := healthChecks.PreformHealthChecks(cxn)
 
 	if err == nil {
 		log.Error("Healthchecks did not throw an error, but should have")
