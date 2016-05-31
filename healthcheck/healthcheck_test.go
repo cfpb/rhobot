@@ -100,6 +100,22 @@ func TestPreformAllChecks(t *testing.T) {
 	}
 }
 
+func TestEvaluatingInvalidChecks(t *testing.T) {
+	cxn := database.GetPGConnection(conf.DBURI())
+	healthChecks, _ := ReadHealthCheckYAMLFromFile("healthchecksInvalid.yml")
+	healthChecks.RunHealthChecks(cxn)
+	results, err := healthChecks.EvaluateHealthChecks()
+
+	if err == nil {
+		log.Error("Healthchecks did not throw an error, but should have")
+		t.Fail()
+	}
+	if len(results) != 2 {
+		log.Error("Healthcheck results had the wrong length")
+		t.Fail()
+	}
+}
+
 func TestSQLHealthCheckReportableElement(t *testing.T) {
 	var hcr report.Element
 
@@ -119,7 +135,6 @@ func TestSQLHealthCheckReportableElement(t *testing.T) {
 		log.Error("No headers in report ReportableElement")
 		t.Fail()
 	}
-
 }
 
 func TestHealthcheckPongo2Report(t *testing.T) {

@@ -96,7 +96,10 @@ func RunHealthCheck(healthCheck SQLHealthCheck, cxn *sql.DB) SQLHealthCheck {
 	rows, err := cxn.Query(healthCheck.Query)
 
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err)
+		healthCheck.Passed = false
+		healthCheck.Actual = err.Error()
+		return healthCheck
 	}
 
 	rows.Next()

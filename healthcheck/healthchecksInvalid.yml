@@ -1,0 +1,13 @@
+name: rhobot healthcheck test
+distribution:
+- stefan.fox@cfpb.gov
+- francisco@cfpb.gov
+tests:
+- severity: "error"
+  expected: false
+  title: "basic test 6 (should be invalid)"
+  query: "select (select count(1) from InvalidSchema.Tables) > 0;"
+- severity: "warn"
+  expected: true
+  title: "should not be able to see this healtcheck"
+  query: "select (select count(1) from information_schema.tables) > 0;"
