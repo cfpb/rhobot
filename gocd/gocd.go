@@ -2,10 +2,12 @@ package gocd
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -86,6 +88,18 @@ type Server struct {
 	Password string
 }
 
+// client returns a http client with longer timeout and skip verify
+func client() *http.Client {
+	timeout := time.Duration(120 * time.Second)
+	transCfg := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	return &http.Client{
+		Timeout:   timeout,
+		Transport: transCfg,
+	}
+}
+
 // NewServerConfig Create a Server object from a config
 func NewServerConfig(host string, port string, user string, password string) *Server {
 	return &Server{
@@ -133,7 +147,7 @@ func (server Server) pipelineConfigPUT(pipeline Pipeline, etag string) (pipeline
 	req.Header.Set("If-Match", etag)
 
 	log.Debugf("Sending request: %v", req)
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := client().Do(req)
 	if err != nil {
 		return
 	}
@@ -179,8 +193,7 @@ func (server Server) pipelineConfigPOST(pipelineConfig PipelineConfig) (pipeline
 	req.Header.Set("Content-Type", "application/json")
 
 	log.Debugf("Sending request: %v", req)
-
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := client().Do(req)
 	if err != nil {
 		return
 	}
@@ -218,8 +231,8 @@ func (server Server) pipelineGET(pipelineName string) (pipeline Pipeline, etag s
 	req.Header.Set("Accept", "application/vnd.go.cd.v1+json")
 	req.Header.Set("Content-Type", "application/json")
 
-	log.Debug("Sending request: ", req)
-	resp, err := http.DefaultClient.Do(req)
+	log.Debugf("Sending request: %v", req)
+	resp, err := client().Do(req)
 	if err != nil {
 		return
 	}
