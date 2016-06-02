@@ -62,7 +62,31 @@ func TestEvaluatingErrorsChecks(t *testing.T) {
 		log.Error("Healthchecks did not throw an error, but should have")
 		t.Fail()
 	}
-	if len(results) != 2 {
+	if len(results) != 3 {
+		log.Error("Healthcheck results had the wrong length")
+		t.Fail()
+	}
+}
+
+func TestPreformingingErrorsChecks(t *testing.T) {
+	cxn := database.GetPGConnection(conf.DBURI())
+	healthChecks, _ := ReadHealthCheckYAMLFromFile("healthchecksErrors.yml")
+	results, HCerrs := healthChecks.PreformHealthChecks(cxn)
+
+	// log.Info("Spew healthcheck results")
+	// spew.Dump(results)
+	// log.Info("Spew healthcheck errors")
+	// spew.Dump(HCerrs)
+
+	if HCerrs == nil {
+		log.Error("Healthchecks did not throw an error, but should have")
+		t.Fail()
+	}
+	if len(HCerrs) != 2 {
+		log.Error("Healthcheck errors had the wrong length")
+		t.Fail()
+	}
+	if len(results) != 3 {
 		log.Error("Healthcheck results had the wrong length")
 		t.Fail()
 	}

@@ -2,7 +2,6 @@ package healthcheck
 
 import (
 	"database/sql"
-	"errors"
 	"io/ioutil"
 	"strings"
 
@@ -53,13 +52,13 @@ func (healthChecks Format) RunHealthChecks(cxn *sql.DB) Format {
 }
 
 // EvaluateHealthChecks contains logic for handling the results of RunHealthChecks
-func (healthChecks Format) EvaluateHealthChecks() (results []SQLHealthCheck, err error) {
+func (healthChecks Format) EvaluateHealthChecks() (results []SQLHealthCheck, errors []HCError) {
 	for _, test := range healthChecks.Tests {
 		results = append(results, test)
 		hcErr := test.EvaluateHealthCheck()
 
 		if hcErr.Err != "" {
-			err = errors.New(hcErr.Err)
+			errors = append(errors, hcErr)
 		}
 
 		if hcErr.Exit {
@@ -86,7 +85,7 @@ func (healthChecks Format) PreformHealthChecks(cxn *sql.DB) (results []SQLHealth
 		}
 
 	}
-	return results, errors
+	return
 }
 
 // RunHealthCheck runs through a single healthcheck and saves the result
@@ -140,7 +139,6 @@ func (healthCheck *SQLHealthCheck) EvaluateHealthCheck() (err HCError) {
 	}
 
 	return err
-
 }
 
 // Implementation of report.Element
