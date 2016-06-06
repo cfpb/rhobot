@@ -18,6 +18,7 @@ type SQLHealthCheck struct {
 	Severity string `yaml:"severity"`
 	Passed   bool
 	Actual   string
+	Equal    bool
 }
 
 // Format is for unmarshiling a healthcheck file
@@ -104,7 +105,8 @@ func RunHealthCheck(healthCheck SQLHealthCheck, cxn *sql.DB) SQLHealthCheck {
 	rows.Next()
 	rows.Scan(&answer)
 
-	healthCheck.Passed = healthCheck.Expected == answer
+	healthCheck.Passed = true
+	healthCheck.Equal = healthCheck.Expected == answer
 	healthCheck.Actual = answer
 	return healthCheck
 }
@@ -113,7 +115,7 @@ func RunHealthCheck(healthCheck SQLHealthCheck, cxn *sql.DB) SQLHealthCheck {
 func (healthCheck *SQLHealthCheck) EvaluateHealthCheck() (err HCError) {
 
 	prettyHealthCheck, _ := yaml.Marshal(&healthCheck)
-	if !healthCheck.Passed {
+	if !healthCheck.Equal || !healthCheck.Passed {
 		switch strings.ToLower(healthCheck.Severity) {
 
 		// When Fatal, return early with an error
@@ -144,7 +146,7 @@ func (healthCheck *SQLHealthCheck) EvaluateHealthCheck() (err HCError) {
 // Implementation of report.Element
 
 // HealthCheckReportHeaders headers used for GetHeaders
-var HealthCheckReportHeaders = []string{"Title", "Query", "Passed", "Expected", "Actual", "Severity"}
+var HealthCheckReportHeaders = []string{"Title", "Query", "Passed", "Expected", "Actual", "Equal", "Severity"}
 
 // GetHeaders Implementation for report.Element
 func (healthCheck SQLHealthCheck) GetHeaders() []string {
@@ -168,6 +170,11 @@ func (healthCheck SQLHealthCheck) GetValue(key string) string {
 	case HealthCheckReportHeaders[4]:
 		return healthCheck.Actual
 	case HealthCheckReportHeaders[5]:
+		if healthCheck.Equal {
+			return "TRUE"
+		}
+		return "FALSE"
+	case HealthCheckReportHeaders[6]:
 		return healthCheck.Severity
 	}
 	return ""

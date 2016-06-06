@@ -23,8 +23,13 @@ const TemplateHealthcheck = `
                 <td>{{ element.Query }}</td>
                 {% if element.Passed == "SUCCESS"%}
                     <td bgcolor="green">{{ element.Passed }}</td>
-                    <td bgcolor="green">{{ element.Expected }}</td>
-                    <td bgcolor="green">{{ element.Actual }}</td>
+										{% if element.Equal == "TRUE"%}
+                    	<td bgcolor="green">{{ element.Expected }}</td>
+                    	<td bgcolor="green">{{ element.Actual }}</td>
+										{% elif  element.Equal == "FALSE" %}
+                    	<td bgcolor="red">{{ element.Expected }}</td>
+                    	<td bgcolor="red">{{ element.Actual }}</td>
+										{% endif %}
                 {% elif  element.Passed == "FAIL" %}
                     <td bgcolor="red">{{ element.Passed }}</td>
                     <td>{{ element.Error }}</td>

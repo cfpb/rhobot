@@ -18,7 +18,7 @@ func init() {
 
 func TestUnmarshal(t *testing.T) {
 	format, err := ReadHealthCheckYAMLFromFile("healthchecksTest.yml")
-	if err != nil || format.Name != "rhobot healthcheck test" {
+	if err != nil || format.Name != "rhobot healthcheck TEST" {
 		t.Error("could not read file")
 	}
 }
@@ -153,6 +153,7 @@ func TestSQLHealthCheckReportableElement(t *testing.T) {
 		"basic test", "FATAL",
 		true,
 		"t",
+		true,
 	}
 
 	for _, header := range hcr.GetHeaders() {
@@ -171,8 +172,8 @@ func TestHealthcheckPongo2Report(t *testing.T) {
 	var prr report.Runner
 	var phr report.Handler
 
-	rePass = SQLHealthCheck{"true", "select (select count(1) from information_schema.tables) > 0;", "basic test", "FATAL", true, "t"}
-	reFail = SQLHealthCheck{"true", "select (select count(1) from information_schema.tables) < 0;", "basic test", "FATAL", false, "f"}
+	rePass = SQLHealthCheck{"true", "select (select count(1) from information_schema.tables) > 0;", "basic test", "FATAL", true, "t", true}
+	reFail = SQLHealthCheck{"true", "select (select count(1) from information_schema.tables) < 0;", "basic test", "FATAL", false, "f", true}
 	prr = report.NewPongo2ReportRunnerFromString(TemplateHealthcheck)
 	phr = report.PrintHandler{}
 
