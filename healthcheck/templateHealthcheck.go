@@ -46,7 +46,7 @@ const TemplateHealthcheck = `
 const FooterHealthcheck = `
 <p>Thank you,</p>
   <p>
-  CFPB CR Data-Sharing Team<br>
+  CFPB Data Team<br>
   Consumer Financial Protection Bureau
   </p>
   <p>Confidentiality Notice: If you received this email by mistake, please notify the sender of the mistake and delete the e-mail and any attachments. An inadvertent disclosure is not intended to waive any privileges.</p>
