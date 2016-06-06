@@ -1,4 +1,4 @@
-name: rhobot healthcheck test
+name: rhobot healthcheck TEST
 distribution:
 - stefan.fox@cfpb.gov
 - francisco@cfpb.gov

@@ -1,4 +1,4 @@
-name: rhobot healthcheck test
+name: rhobot healthcheck ERRORS
 distribution:
 - stefan.fox@cfpb.gov
 - francisco@cfpb.gov
@@ -6,6 +6,10 @@ tests:
 - severity: "error"
   expected: false
   title: "basic test 4 (should error)"
+  query: "select (select count(1) from information_schema.tables) > 0;"
+- severity: "error"
+  expected: false
+  title: "second error"
   query: "select (select count(1) from information_schema.tables) > 0;"
 - severity: "warn"
   expected: true
