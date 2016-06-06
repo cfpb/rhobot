@@ -15,7 +15,7 @@ type Config struct {
 	logOutput    io.Writer
 	logLevel     log.Level
 
-	pgHost     string
+	PgHost     string
 	pgPort     string
 	PgDatabase string
 	pgUser     string
@@ -38,7 +38,7 @@ func NewDefaultConfig() *Config {
 		logFormatter: &log.TextFormatter{},
 		logOutput:    os.Stderr,
 		logLevel:     log.InfoLevel,
-		pgHost:       "localhost",
+		PgHost:       "localhost",
 		pgPort:       "5432",
 		PgDatabase:   "postgres",
 		pgUser:       "postgres",
@@ -63,7 +63,7 @@ func NewConfig() (config *Config) {
 	log.Debug("Loading settings from environment variables, when appropriate.")
 	if os.Getenv("PGHOST") != "" {
 		log.Debug("Retrieving value from PGHOST environment variable.")
-		config.pgHost = os.Getenv("PGHOST")
+		config.PgHost = os.Getenv("PGHOST")
 	}
 
 	if os.Getenv("PGPORT") != "" {
@@ -159,7 +159,7 @@ func (config *Config) SetDBURI(dbURI string) {
 
 	config.pgUser = match[1]
 	config.pgPassword = match[2]
-	config.pgHost = match[3]
+	config.PgHost = match[3]
 	config.PgDatabase = match[4]
 }
 
@@ -168,7 +168,7 @@ func (config *Config) DBURI() (dbURI string) {
 	dbURI = fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=require",
 		config.pgUser,
 		config.pgPassword,
-		config.pgHost,
+		config.PgHost,
 		config.pgPort,
 		config.PgDatabase)
 
