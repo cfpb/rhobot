@@ -1,5 +1,11 @@
 package healthcheck
 
+import (
+	"fmt"
+	"strconv"
+	"strings"
+)
+
 // TemplateHealthcheck pongo2 template for healthchecks
 const TemplateHealthcheck = `
   <h2>{{ metadata.name }} - Running against database "{{ metadata.db_name }}"</h2>
@@ -40,3 +46,26 @@ const FooterHealthcheck = `
   </p>
   <p>Confidentiality Notice: If you received this email by mistake, please notify the sender of the mistake and delete the e-mail and any attachments. An inadvertent disclosure is not intended to waive any privileges.</p>
 `
+
+// SubjectHealthcheck creates a subject for healthcheck email
+func SubjectHealthcheck(name string, dbName string, hostname string, level string, errors int, fatal bool) string {
+
+	hcName := name
+	if name == "" {
+		hcName = "healthchecks"
+	}
+
+	//subjectStr := fmt.Sprintf("%s for %s on %s at %s level",
+	subjectStr := fmt.Sprintf("%s - %s - %s - %s level",
+		hcName, dbName, hostname, strings.ToUpper(level))
+
+	if errors > 0 {
+		subjectStr = fmt.Sprintf("%s error(s) - %s", strconv.Itoa(errors), subjectStr)
+	}
+
+	if fatal {
+		subjectStr = fmt.Sprintf("FATAL - %s", subjectStr)
+	}
+
+	return subjectStr
+}
