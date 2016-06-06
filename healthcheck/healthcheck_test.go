@@ -62,7 +62,11 @@ func TestEvaluatingErrorsChecks(t *testing.T) {
 		log.Error("Healthchecks did not throw an error, but should have")
 		t.Fail()
 	}
-	if len(results) != 3 {
+	if len(err) != 3 {
+		log.Error("Healthcheck errors had the wrong length")
+		t.Fail()
+	}
+	if len(results) != 4 {
 		log.Error("Healthcheck results had the wrong length")
 		t.Fail()
 	}
@@ -82,11 +86,11 @@ func TestPreformingingErrorsChecks(t *testing.T) {
 		log.Error("Healthchecks did not throw an error, but should have")
 		t.Fail()
 	}
-	if len(HCerrs) != 2 {
+	if len(HCerrs) != 3 {
 		log.Error("Healthcheck errors had the wrong length")
 		t.Fail()
 	}
-	if len(results) != 3 {
+	if len(results) != 4 {
 		log.Error("Healthcheck results had the wrong length")
 		t.Fail()
 	}
