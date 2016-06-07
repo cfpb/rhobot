@@ -221,6 +221,7 @@ func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath
 		"db_name":   config.PgDatabase,
 		"footer":    healthcheck.FooterHealthcheck,
 		"timestamp": time.Now().UTC().String(),
+		"status":    healthcheck.StatusHealthchecks(numErrors, fatal),
 	}
 
 	prr := report.NewPongo2ReportRunnerFromString(healthcheck.TemplateHealthcheck)

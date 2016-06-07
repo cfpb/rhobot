@@ -175,7 +175,7 @@ func (healthCheck SQLHealthCheck) GetValue(key string) string {
 		}
 		return "FALSE"
 	case HealthCheckReportHeaders[6]:
-		return healthCheck.Severity
+		return strings.ToUpper(healthCheck.Severity)
 	}
 	return ""
 }

@@ -8,10 +8,12 @@ import (
 
 // TemplateHealthcheck pongo2 template for healthchecks
 const TemplateHealthcheck = `
+	<h2>{{ metadata.status }}</h2>
   <h2>{{ metadata.name }} - Running against database "{{ metadata.db_name }}"</h2>
     <table border=1 frame=void rules=rows>
         <tr>
             <th>Title</th>
+						<th>Severity</th>
             <th>Query</th>
             <th>Test Ran?</th>
             <th>Expected</th>
@@ -20,6 +22,7 @@ const TemplateHealthcheck = `
         {% for element in elements %}
             <tr>
                 <td>{{ element.Title }}</td>
+								<td>{{ element.Severity }}</td>
                 <td>{{ element.Query }}</td>
                 {% if element.Passed == "SUCCESS"%}
                     <td bgcolor="green">{{ element.Passed }}</td>
@@ -64,13 +67,20 @@ func SubjectHealthcheck(name string, dbName string, hostname string, level strin
 	subjectStr := fmt.Sprintf("%s - %s - %s - %s level",
 		hcName, dbName, hostname, strings.ToUpper(level))
 
-	if errors > 0 {
-		subjectStr = fmt.Sprintf("%s error(s) - %s", strconv.Itoa(errors), subjectStr)
-	}
-
-	if fatal {
-		subjectStr = fmt.Sprintf("FATAL - %s", subjectStr)
-	}
+	statusStr := StatusHealthchecks(errors, fatal)
+	subjectStr = fmt.Sprintf("%s - %s", statusStr, subjectStr)
 
 	return subjectStr
+}
+
+// StatusHealthchecks returns a simple summray for all healthchecks
+func StatusHealthchecks(errors int, fatal bool) string {
+
+	if fatal {
+		return fmt.Sprintf("FATAL")
+	} else if errors > 0 {
+		return fmt.Sprintf("ERROR(s) %s", strconv.Itoa(errors))
+	} else {
+		return fmt.Sprintf("PASS")
+	}
 }
