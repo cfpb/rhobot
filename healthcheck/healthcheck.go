@@ -2,7 +2,6 @@ package healthcheck
 
 import (
 	"database/sql"
-	"errors"
 	"io/ioutil"
 	"strings"
 
@@ -19,6 +18,7 @@ type SQLHealthCheck struct {
 	Severity string `yaml:"severity"`
 	Passed   bool
 	Actual   string
+	Equal    bool
 }
 
 // Format is for unmarshiling a healthcheck file
@@ -53,13 +53,13 @@ func (healthChecks Format) RunHealthChecks(cxn *sql.DB) Format {
 }
 
 // EvaluateHealthChecks contains logic for handling the results of RunHealthChecks
-func (healthChecks Format) EvaluateHealthChecks() (results []SQLHealthCheck, err error) {
+func (healthChecks Format) EvaluateHealthChecks() (results []SQLHealthCheck, errors []HCError) {
 	for _, test := range healthChecks.Tests {
 		results = append(results, test)
 		hcErr := test.EvaluateHealthCheck()
 
 		if hcErr.Err != "" {
-			err = errors.New(hcErr.Err)
+			errors = append(errors, hcErr)
 		}
 
 		if hcErr.Exit {
@@ -86,7 +86,7 @@ func (healthChecks Format) PreformHealthChecks(cxn *sql.DB) (results []SQLHealth
 		}
 
 	}
-	return results, errors
+	return
 }
 
 // RunHealthCheck runs through a single healthcheck and saves the result
@@ -96,13 +96,17 @@ func RunHealthCheck(healthCheck SQLHealthCheck, cxn *sql.DB) SQLHealthCheck {
 	rows, err := cxn.Query(healthCheck.Query)
 
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err)
+		healthCheck.Passed = false
+		healthCheck.Actual = err.Error()
+		return healthCheck
 	}
 
 	rows.Next()
 	rows.Scan(&answer)
 
-	healthCheck.Passed = healthCheck.Expected == answer
+	healthCheck.Passed = true
+	healthCheck.Equal = healthCheck.Expected == answer
 	healthCheck.Actual = answer
 	return healthCheck
 }
@@ -111,7 +115,7 @@ func RunHealthCheck(healthCheck SQLHealthCheck, cxn *sql.DB) SQLHealthCheck {
 func (healthCheck *SQLHealthCheck) EvaluateHealthCheck() (err HCError) {
 
 	prettyHealthCheck, _ := yaml.Marshal(&healthCheck)
-	if !healthCheck.Passed {
+	if !healthCheck.Equal || !healthCheck.Passed {
 		switch strings.ToLower(healthCheck.Severity) {
 
 		// When Fatal, return early with an error
@@ -137,13 +141,12 @@ func (healthCheck *SQLHealthCheck) EvaluateHealthCheck() (err HCError) {
 	}
 
 	return err
-
 }
 
 // Implementation of report.Element
 
 // HealthCheckReportHeaders headers used for GetHeaders
-var HealthCheckReportHeaders = []string{"Title", "Query", "Passed", "Expected", "Actual", "Severity"}
+var HealthCheckReportHeaders = []string{"Title", "Query", "Passed", "Expected", "Actual", "Equal", "Severity"}
 
 // GetHeaders Implementation for report.Element
 func (healthCheck SQLHealthCheck) GetHeaders() []string {
@@ -167,7 +170,12 @@ func (healthCheck SQLHealthCheck) GetValue(key string) string {
 	case HealthCheckReportHeaders[4]:
 		return healthCheck.Actual
 	case HealthCheckReportHeaders[5]:
-		return healthCheck.Severity
+		if healthCheck.Equal {
+			return "TRUE"
+		}
+		return "FALSE"
+	case HealthCheckReportHeaders[6]:
+		return strings.ToUpper(healthCheck.Severity)
 	}
 	return ""
 }

@@ -1,18 +1,19 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"strings"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/ahl5esoft/golang-underscore"
 	"github.com/cfpb/rhobot/config"
 	"github.com/cfpb/rhobot/database"
 	"github.com/cfpb/rhobot/gocd"
 	"github.com/cfpb/rhobot/healthcheck"
 	"github.com/cfpb/rhobot/report"
 	"github.com/codegangsta/cli"
+	"github.com/davecgh/go-spew/spew"
 )
 
 func main() {
@@ -197,10 +198,19 @@ func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath
 	cxn := database.GetPGConnection(config.DBURI())
 
 	// TODO the error returned from PreformHealthChecks determis a bad exit
-	results, HCerr := healthChecks.PreformHealthChecks(cxn)
-	if HCerr != nil {
-		log.Fatal("Failed to read healthchecks: ", HCerr)
-	}
+	results, HCerrs := healthChecks.PreformHealthChecks(cxn)
+
+	numErrors := 0
+	fatal := false
+	underscore.Each(HCerrs, func(n healthcheck.HCError, i int) {
+		if strings.Contains(strings.ToUpper(n.Err), "FATAL") {
+			fatal = true
+		}
+		if strings.Contains(strings.ToUpper(n.Err), "ERROR") {
+			numErrors = numErrors + 1
+		}
+	})
+
 	var elements []report.Element
 	for _, val := range results {
 		elements = append(elements, val)
@@ -212,6 +222,7 @@ func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath
 		"db_name":   config.PgDatabase,
 		"footer":    healthcheck.FooterHealthcheck,
 		"timestamp": time.Now().UTC().String(),
+		"status":    healthcheck.StatusHealthchecks(numErrors, fatal),
 	}
 
 	prr := report.NewPongo2ReportRunnerFromString(healthcheck.TemplateHealthcheck)
@@ -234,13 +245,7 @@ func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath
 
 		for _, level := range report.LogLevelArray {
 
-			// TODO calculate a subject line to include hostname, DB, # of failed HCs
-			hcName := metadata["name"]
-			if hcName == "" {
-				hcName = "healthchecks"
-			}
-			subjectStr := fmt.Sprintf("%s for %s at %s level",
-				hcName, metadata["db_name"], strings.ToUpper(level))
+			subjectStr := healthcheck.SubjectHealthcheck(healthChecks.Name, config.PgDatabase, config.PgHost, level, numErrors, fatal)
 
 			logFilteredSet := report.FilterReportSet(rs, level)
 			reader, _ := prr.ReportReader(logFilteredSet)
@@ -263,6 +268,11 @@ func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath
 				}
 			}
 		}
+	}
 
+	// Bad Exit
+	if HCerrs != nil {
+		spew.Dump(HCerrs)
+		log.Fatal("Healthchecks Failed")
 	}
 }

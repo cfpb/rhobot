@@ -19,8 +19,8 @@ func TestSetDBURI(t *testing.T) {
 	config := NewDefaultConfig()
 	config.SetDBURI("postgres://test_user:password@localhost:5432/postgres?sslmode=require")
 
-	if config.pgUser != "test_user" {
-		log.Errorf("Testing SetDBURI failed, user: %s", config.pgUser)
+	if config.PgUser != "test_user" {
+		log.Errorf("Testing SetDBURI failed, user: %s", config.PgUser)
 		t.Fail()
 	}
 }

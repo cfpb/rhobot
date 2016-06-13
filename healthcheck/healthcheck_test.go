@@ -8,6 +8,7 @@ import (
 	"github.com/cfpb/rhobot/config"
 	"github.com/cfpb/rhobot/database"
 	"github.com/cfpb/rhobot/report"
+	"github.com/davecgh/go-spew/spew"
 )
 
 var conf *config.Config
@@ -18,7 +19,7 @@ func init() {
 
 func TestUnmarshal(t *testing.T) {
 	format, err := ReadHealthCheckYAMLFromFile("healthchecksTest.yml")
-	if err != nil || format.Name != "rhobot healthcheck test" {
+	if err != nil || format.Name != "rhobot healthcheck TEST" {
 		t.Error("could not read file")
 	}
 }
@@ -62,7 +63,37 @@ func TestEvaluatingErrorsChecks(t *testing.T) {
 		log.Error("Healthchecks did not throw an error, but should have")
 		t.Fail()
 	}
-	if len(results) != 2 {
+	if len(err) != 3 {
+		log.Error("Healthcheck errors had the wrong length")
+		t.Fail()
+	}
+	if len(results) != 4 {
+		log.Error("Healthcheck results had the wrong length")
+		t.Fail()
+	}
+}
+
+func TestPreformingingErrorsChecks(t *testing.T) {
+	cxn := database.GetPGConnection(conf.DBURI())
+	healthChecks, _ := ReadHealthCheckYAMLFromFile("healthchecksErrors.yml")
+	results, HCerrs := healthChecks.PreformHealthChecks(cxn)
+
+	if log.GetLevel() == log.DebugLevel {
+		log.Debug("Spew healthcheck results")
+		spew.Dump(results)
+		log.Debug("Spew healthcheck errors")
+		spew.Dump(HCerrs)
+	}
+
+	if HCerrs == nil {
+		log.Error("Healthchecks did not throw an error, but should have")
+		t.Fail()
+	}
+	if len(HCerrs) != 3 {
+		log.Error("Healthcheck errors had the wrong length")
+		t.Fail()
+	}
+	if len(results) != 4 {
 		log.Error("Healthcheck results had the wrong length")
 		t.Fail()
 	}
@@ -100,6 +131,22 @@ func TestPreformAllChecks(t *testing.T) {
 	}
 }
 
+func TestEvaluatingInvalidChecks(t *testing.T) {
+	cxn := database.GetPGConnection(conf.DBURI())
+	healthChecks, _ := ReadHealthCheckYAMLFromFile("healthchecksInvalid.yml")
+	healthChecks.RunHealthChecks(cxn)
+	results, err := healthChecks.EvaluateHealthChecks()
+
+	if err == nil {
+		log.Error("Healthchecks did not throw an error, but should have")
+		t.Fail()
+	}
+	if len(results) != 2 {
+		log.Error("Healthcheck results had the wrong length")
+		t.Fail()
+	}
+}
+
 func TestSQLHealthCheckReportableElement(t *testing.T) {
 	var hcr report.Element
 
@@ -109,6 +156,7 @@ func TestSQLHealthCheckReportableElement(t *testing.T) {
 		"basic test", "FATAL",
 		true,
 		"t",
+		true,
 	}
 
 	for _, header := range hcr.GetHeaders() {
@@ -119,7 +167,6 @@ func TestSQLHealthCheckReportableElement(t *testing.T) {
 		log.Error("No headers in report ReportableElement")
 		t.Fail()
 	}
-
 }
 
 func TestHealthcheckPongo2Report(t *testing.T) {
@@ -128,8 +175,8 @@ func TestHealthcheckPongo2Report(t *testing.T) {
 	var prr report.Runner
 	var phr report.Handler
 
-	rePass = SQLHealthCheck{"true", "select (select count(1) from information_schema.tables) > 0;", "basic test", "FATAL", true, "t"}
-	reFail = SQLHealthCheck{"true", "select (select count(1) from information_schema.tables) < 0;", "basic test", "FATAL", false, "f"}
+	rePass = SQLHealthCheck{"true", "select (select count(1) from information_schema.tables) > 0;", "basic test", "FATAL", true, "t", true}
+	reFail = SQLHealthCheck{"true", "select (select count(1) from information_schema.tables) < 0;", "basic test", "FATAL", false, "f", true}
 	prr = report.NewPongo2ReportRunnerFromString(TemplateHealthcheck)
 	phr = report.PrintHandler{}
 
