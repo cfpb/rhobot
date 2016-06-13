@@ -16,10 +16,10 @@ type Config struct {
 	logLevel     log.Level
 
 	PgHost     string
-	pgPort     string
+	PgPort     string
 	PgDatabase string
-	pgUser     string
-	pgPassword string
+	PgUser     string
+	PgPassword string
 
 	GOCDHost     string
 	GOCDPort     string
@@ -39,10 +39,10 @@ func NewDefaultConfig() *Config {
 		logOutput:    os.Stderr,
 		logLevel:     log.InfoLevel,
 		PgHost:       "localhost",
-		pgPort:       "5432",
+		PgPort:       "5432",
 		PgDatabase:   "postgres",
-		pgUser:       "postgres",
-		pgPassword:   "password",
+		PgUser:       "postgres",
+		PgPassword:   "password",
 		GOCDHost:     "http://localhost",
 		GOCDPort:     "8153",
 		GOCDUser:     "admin",
@@ -68,7 +68,7 @@ func NewConfig() (config *Config) {
 
 	if os.Getenv("PGPORT") != "" {
 		log.Debug("Retrieving value from PGPORT environment variable.")
-		config.pgPort = os.Getenv("PGPORT")
+		config.PgPort = os.Getenv("PGPORT")
 	}
 
 	if os.Getenv("PGDATABASE") != "" {
@@ -78,12 +78,12 @@ func NewConfig() (config *Config) {
 
 	if os.Getenv("PGUSER") != "" {
 		log.Debug("Retrieving value from PGUSER environment variable.")
-		config.pgUser = os.Getenv("PGUSER")
+		config.PgUser = os.Getenv("PGUSER")
 	}
 
 	if os.Getenv("PGPASSWORD") != "" {
 		log.Debug("Retrieving value from PGPASSWORD environment variable.")
-		config.pgPassword = os.Getenv("PGPASSWORD")
+		config.PgPassword = os.Getenv("PGPASSWORD")
 	}
 
 	if os.Getenv("GOCDHOST") != "" {
@@ -157,8 +157,8 @@ func (config *Config) SetDBURI(dbURI string) {
 		log.Error("Unable to set DB connection parameters, too few regex matches with DB URI!")
 	}
 
-	config.pgUser = match[1]
-	config.pgPassword = match[2]
+	config.PgUser = match[1]
+	config.PgPassword = match[2]
 	config.PgHost = match[3]
 	config.PgDatabase = match[4]
 }
@@ -166,10 +166,10 @@ func (config *Config) SetDBURI(dbURI string) {
 // DBURI generates a DB URI from the proper configruation options
 func (config *Config) DBURI() (dbURI string) {
 	dbURI = fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=require",
-		config.pgUser,
-		config.pgPassword,
+		config.PgUser,
+		config.PgPassword,
 		config.PgHost,
-		config.pgPort,
+		config.PgPort,
 		config.PgDatabase)
 
 	return
