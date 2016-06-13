@@ -8,6 +8,7 @@ import (
 	"github.com/cfpb/rhobot/config"
 	"github.com/cfpb/rhobot/database"
 	"github.com/cfpb/rhobot/report"
+	"github.com/davecgh/go-spew/spew"
 )
 
 var conf *config.Config
@@ -77,10 +78,12 @@ func TestPreformingingErrorsChecks(t *testing.T) {
 	healthChecks, _ := ReadHealthCheckYAMLFromFile("healthchecksErrors.yml")
 	results, HCerrs := healthChecks.PreformHealthChecks(cxn)
 
-	// log.Info("Spew healthcheck results")
-	// spew.Dump(results)
-	// log.Info("Spew healthcheck errors")
-	// spew.Dump(HCerrs)
+	if log.GetLevel() == log.DebugLevel {
+		log.Debug("Spew healthcheck results")
+		spew.Dump(results)
+		log.Debug("Spew healthcheck errors")
+		spew.Dump(HCerrs)
+	}
 
 	if HCerrs == nil {
 		log.Error("Healthchecks did not throw an error, but should have")

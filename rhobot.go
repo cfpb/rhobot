@@ -13,6 +13,7 @@ import (
 	"github.com/cfpb/rhobot/healthcheck"
 	"github.com/cfpb/rhobot/report"
 	"github.com/codegangsta/cli"
+	"github.com/davecgh/go-spew/spew"
 )
 
 func main() {
@@ -271,7 +272,7 @@ func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath
 
 	// Bad Exit
 	if HCerrs != nil {
-		//spew.Dump(HCerrs)
+		spew.Dump(HCerrs)
 		log.Fatal("Healthchecks Failed")
 	}
 }
