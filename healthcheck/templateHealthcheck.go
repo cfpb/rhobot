@@ -63,7 +63,6 @@ func SubjectHealthcheck(name string, dbName string, hostname string, level strin
 		hcName = "healthchecks"
 	}
 
-	//subjectStr := fmt.Sprintf("%s for %s on %s at %s level",
 	subjectStr := fmt.Sprintf("%s - %s - %s - %s level",
 		hcName, dbName, hostname, strings.ToUpper(level))
 
