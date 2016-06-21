@@ -26,8 +26,19 @@ before_install:
     - chmod +x docker-compose
     - sudo mv docker-compose /usr/local/bin
 
+install:
+  - go get github.com/Sirupsen/logrus
+  - go get github.com/ahl5esoft/golang-underscore
+  - go get github.com/cfpb/rhobot
+  - go get github.com/codegangsta/cli
+  - go get github.com/davecgh/go-spew
+  - go get github.com/lib/pq
+  - go get gopkg.in/yaml.v2
+  - go get github.com/flosch/pongo2
+  - go get gopkg.in/gomail.v2
+
 script:
-    - docker version
-    - docker-compose version
-    - go get -t -v ./...
+    # setup dockerized services
+    #- docker version
+    #- docker-compose version
     - go test -v ./...
