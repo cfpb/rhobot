@@ -26,6 +26,8 @@ before_install:
     - chmod +x docker-compose
     - sudo mv docker-compose /usr/local/bin
 
+go_import_path: github.com/cfpb/rhobot
+
 install:
   - go get github.com/Sirupsen/logrus
   - go get github.com/ahl5esoft/golang-underscore
