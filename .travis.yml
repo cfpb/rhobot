@@ -30,7 +30,6 @@ before_install:
 go_import_path: github.com/cfpb/rhobot
 
 install:
-  - docker-compose up
   - go get github.com/Sirupsen/logrus
   - go get github.com/ahl5esoft/golang-underscore
   - go get github.com/codegangsta/cli
@@ -44,4 +43,6 @@ script:
     # setup dockerized services
     #- docker version
     #- docker-compose version
+    - docker-compose up -d
+    - sleep 60
     - go test -v ./...
