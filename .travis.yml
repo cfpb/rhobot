@@ -45,4 +45,5 @@ script:
     #- docker-compose version
     - docker-compose up -d
     - sleep 60
+    - docker ps
     - go test -v ./...

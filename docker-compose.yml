@@ -6,4 +6,4 @@ db:
 gocd:
   image: gocd/gocd-server
   ports:
-    - "8153"
+    - "8153:8153"
