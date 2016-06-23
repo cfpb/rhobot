@@ -141,7 +141,9 @@ func (server Server) pipelineConfigPUT(pipeline Pipeline, etag string) (pipeline
 		return
 	}
 
-	req.SetBasicAuth(server.User, server.Password)
+	if len(server.User) > 0 && len(server.Password) > 0 {
+		req.SetBasicAuth(server.User, server.Password)
+	}
 	req.Header.Set("Accept", "application/vnd.go.cd.v1+json")
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("If-Match", etag)
@@ -188,7 +190,9 @@ func (server Server) pipelineConfigPOST(pipelineConfig PipelineConfig) (pipeline
 		return
 	}
 
-	req.SetBasicAuth(server.User, server.Password)
+	if len(server.User) > 0 && len(server.Password) > 0 {
+		req.SetBasicAuth(server.User, server.Password)
+	}
 	req.Header.Set("Accept", "application/vnd.go.cd.v1+json")
 	req.Header.Set("Content-Type", "application/json")
 
@@ -227,7 +231,9 @@ func (server Server) pipelineGET(pipelineName string) (pipeline Pipeline, etag s
 		return
 	}
 
-	req.SetBasicAuth(server.User, server.Password)
+	if len(server.User) > 0 && len(server.Password) > 0 {
+		req.SetBasicAuth(server.User, server.Password)
+	}
 	req.Header.Set("Accept", "application/vnd.go.cd.v1+json")
 	req.Header.Set("Content-Type", "application/json")
 
