@@ -1,4 +1,5 @@
 # Rhobot - a database devops command line tool
+[![Build Status](https://travis-ci.org/cfpb/rhobot.svg?branch=develop)](https://travis-ci.org/cfpb/rhobot)
 
 **Description**:  
 
