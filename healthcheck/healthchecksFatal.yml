@@ -1,0 +1,13 @@
+name: rhobot healthcheck FATAL
+distribution:
+- stefan.fox@cfpb.gov
+- francisco@cfpb.gov
+tests:
+- severity: "fatal"
+  expected: 0
+  title: "basic test 5 (should error)"
+  query: "select count(1) from information_schema.tables;"
+- severity: "warn"
+  expected: true
+  title: "should not be able to see this healtcheck"
+  query: "select (select count(1) from information_schema.tables) > 0;"
