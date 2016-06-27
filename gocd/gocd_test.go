@@ -21,6 +21,10 @@ func init() {
 	conf = config.NewConfig()
 	conf.SetLogLevel("info")
 
+	// use no authentication for test
+	conf.GOCDUser = ""
+	conf.GOCDPassword = ""
+
 	server = NewServerConfig(conf.GOCDHost, conf.GOCDPort, conf.GOCDUser, conf.GOCDPassword)
 
 	buf := bytes.NewBuffer(nil)

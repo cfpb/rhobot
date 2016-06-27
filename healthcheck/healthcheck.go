@@ -2,6 +2,7 @@ package healthcheck
 
 import (
 	"database/sql"
+	"errors"
 	"io/ioutil"
 	"strings"
 
@@ -38,16 +39,53 @@ type HCError struct {
 // ReadHealthCheckYAMLFromFile loads healthcheck data from a YAML file
 func ReadHealthCheckYAMLFromFile(path string) (format Format, err error) {
 	data, err := ioutil.ReadFile(path)
-	if err == nil {
-		err = yaml.Unmarshal(data, &format)
+	if err != nil {
+		return
 	}
+
+	err = yaml.Unmarshal(data, &format)
+	if err != nil {
+		return
+	}
+
+	valid := format.ValidateHealthChecks()
+	if !valid {
+		err = errors.New("Reading Healthcheck file failed")
+		return
+	}
+
 	return
+}
+
+// ValidateHealthChecks validates all healthchecks in specified file
+func (healthChecks Format) ValidateHealthChecks() bool {
+	for _, test := range healthChecks.Tests {
+		if !test.ValidateHealthCheck() {
+			return false
+		}
+	}
+	return true
+}
+
+// RejectBadHealthChecks validates all healthchecks in specified file
+func (healthChecks Format) RejectBadHealthChecks() Format {
+
+	var GoodTests []SQLHealthCheck
+
+	for _, test := range healthChecks.Tests {
+		if test.ValidateHealthCheck() {
+			GoodTests = append(GoodTests, test)
+		}
+	}
+
+	healthChecks.Tests = GoodTests
+	return healthChecks
 }
 
 // RunHealthChecks executes all health checks in the specified file
 func (healthChecks Format) RunHealthChecks(cxn *sql.DB) Format {
 	for _, test := range healthChecks.Tests {
-		test = RunHealthCheck(test, cxn)
+		test.RunHealthCheck(cxn)
 	}
 	return healthChecks
 }
@@ -73,7 +111,7 @@ func (healthChecks Format) EvaluateHealthChecks() (results []SQLHealthCheck, err
 // PreformHealthChecks runs and evaluates healthChecks one at a time
 func (healthChecks Format) PreformHealthChecks(cxn *sql.DB) (results []SQLHealthCheck, errors []HCError) {
 	for _, test := range healthChecks.Tests {
-		test = RunHealthCheck(test, cxn)
+		test.RunHealthCheck(cxn)
 		results = append(results, test)
 		hcErr := test.EvaluateHealthCheck()
 
@@ -89,8 +127,30 @@ func (healthChecks Format) PreformHealthChecks(cxn *sql.DB) (results []SQLHealth
 	return
 }
 
+// ValidateHealthCheck makes sure a helathcheck has all the fields populated
+func (healthCheck SQLHealthCheck) ValidateHealthCheck() bool {
+
+	if len(healthCheck.Expected) == 0 {
+		return false
+	}
+
+	if len(healthCheck.Query) == 0 {
+		return false
+	}
+
+	if len(healthCheck.Title) == 0 {
+		return false
+	}
+
+	if len(healthCheck.Severity) == 0 {
+		return false
+	}
+
+	return true
+}
+
 // RunHealthCheck runs through a single healthcheck and saves the result
-func RunHealthCheck(healthCheck SQLHealthCheck, cxn *sql.DB) SQLHealthCheck {
+func (healthCheck SQLHealthCheck) RunHealthCheck(cxn *sql.DB) {
 	answer := ""
 
 	rows, err := cxn.Query(healthCheck.Query)
@@ -99,16 +159,15 @@ func RunHealthCheck(healthCheck SQLHealthCheck, cxn *sql.DB) SQLHealthCheck {
 		log.Error(err)
 		healthCheck.Passed = false
 		healthCheck.Actual = err.Error()
-		return healthCheck
+	} else {
+
+		rows.Next()
+		rows.Scan(&answer)
+
+		healthCheck.Passed = true
+		healthCheck.Equal = healthCheck.Expected == answer
+		healthCheck.Actual = answer
 	}
-
-	rows.Next()
-	rows.Scan(&answer)
-
-	healthCheck.Passed = true
-	healthCheck.Equal = healthCheck.Expected == answer
-	healthCheck.Actual = answer
-	return healthCheck
 }
 
 // EvaluateHealthCheck runs through a single healthcheck and acts on the result
