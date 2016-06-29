@@ -41,8 +41,6 @@ install:
 
 script:
     # setup dockerized services
-    #- docker version
-    #- docker-compose version
     - docker-compose up -d
     - sleep 60
     - docker ps
