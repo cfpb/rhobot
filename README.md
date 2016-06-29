@@ -1,10 +1,11 @@
 # Rhobot - a database devops command line tool
+[![Build Status](https://travis-ci.org/cfpb/rhobot.svg?branch=develop)](https://travis-ci.org/cfpb/rhobot)
 
 **Description**:  
 
 Rhobot is a tool for generalized stateless automation of databases, leveraging Github, and third party application API's to apply DevOps principles to database development.  It is designed to work with the GoCD continuous delivery tool.
 
-  - **Technology stack**: Rhobot is written in Go, and currently supports interactinos with the GoCD application and Postgres databases.
+  - **Technology stack**: Rhobot is written in Go, and currently supports interactions with the GoCD application and Postgres databases.
   - **Status**:  Pre-alpha, view the change log here: [CHANGELOG](CHANGELOG.md).
 
 ## Dependencies

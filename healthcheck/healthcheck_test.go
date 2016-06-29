@@ -116,6 +116,30 @@ func TestEvaluatingFatalChecks(t *testing.T) {
 	}
 }
 
+func TestEvaluatingIncompleteChecks(t *testing.T) {
+	cxn := database.GetPGConnection(conf.DBURI())
+	healthChecks, ferr := ReadHealthCheckYAMLFromFile("healthchecksIncomplete.yml")
+
+	if ferr == nil {
+		log.Error("Reading Healthcheck file did not throw an error, but should have")
+		t.Fail()
+	}
+
+	healthChecks = healthChecks.RejectBadHealthChecks()
+	healthChecks.RunHealthChecks(cxn)
+	results, err := healthChecks.EvaluateHealthChecks()
+
+	if err != nil {
+		log.Error("Evaluating Healthchecks threw an error")
+		t.Fail()
+	}
+
+	if len(results) != 1 {
+		log.Error("Healthcheck results had the wrong length")
+		t.Fail()
+	}
+}
+
 func TestPreformAllChecks(t *testing.T) {
 	cxn := database.GetPGConnection(conf.DBURI())
 	healthChecks, _ := ReadHealthCheckYAMLFromFile("healthchecksAll.yml")
