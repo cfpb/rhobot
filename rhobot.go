@@ -18,9 +18,15 @@ import (
 
 func main() {
 
+	cli.VersionFlag = cli.BoolFlag{
+		Name:  "print-version, V",
+		Usage: "print only the version",
+	}
+
 	app := cli.NewApp()
 	app.Name = "Rhobot"
 	app.Usage = "Rhobot is a database development tool that uses DevOps best practices."
+	app.Version = Version
 	app.EnableBashCompletion = true
 
 	conf := config.NewConfig()
