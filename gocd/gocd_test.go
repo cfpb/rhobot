@@ -25,7 +25,7 @@ func init() {
 	conf.GOCDUser = ""
 	conf.GOCDPassword = ""
 
-	server = NewServerConfig(conf.GOCDHost, conf.GOCDPort, conf.GOCDUser, conf.GOCDPassword)
+	server = NewServerConfig(conf.GOCDHost, conf.GOCDPort, conf.GOCDUser, conf.GOCDPassword, conf.GOCDTimeout)
 
 	buf := bytes.NewBuffer(nil)
 	f, _ := os.Open("./test.json")
@@ -139,4 +139,27 @@ func TestGocdPUT(t *testing.T) {
 	if strangeEnvVarA != strangeEnvVarC {
 		t.Error("STRANGE environment variable was not reset")
 	}
+}
+
+func TestGocdTimeout(t *testing.T) {
+
+	serverA := NewServerConfig(conf.GOCDHost, conf.GOCDPort, conf.GOCDUser, conf.GOCDPassword, "1")
+	serverB := NewServerConfig(conf.GOCDHost, conf.GOCDPort, conf.GOCDUser, conf.GOCDPassword, "120")
+
+	etag, err := Exist(serverA, "test")
+	if etag == "" {
+		t.Error("test does not exist as a gocd pipeline")
+	}
+	if err == nil {
+		t.Error("did not Timeout but should have", err)
+	}
+
+	etag, err = Exist(serverB, "test")
+	if etag == "" {
+		t.Error("test does not exist as a gocd pipeline")
+	}
+	if err != nil {
+		t.Error("threw an error but should not have", err)
+	}
+
 }

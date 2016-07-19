@@ -30,7 +30,7 @@ func main() {
 	app.EnableBashCompletion = true
 
 	conf := config.NewConfig()
-	gocdServer := gocd.NewServerConfig(conf.GOCDHost, conf.GOCDPort, conf.GOCDUser, conf.GOCDPassword)
+	gocdServer := gocd.NewServerConfig(conf.GOCDHost, conf.GOCDPort, conf.GOCDUser, conf.GOCDPassword, conf.GOCDTimeout)
 
 	logLevelFlag := cli.StringFlag{
 		Name:  "loglevel, lvl",
@@ -193,7 +193,7 @@ func updateGOCDHost(c *cli.Context, config *config.Config, gocdServer *gocd.Serv
 	if c.String("host") != "" {
 		config.SetGoCDHost(c.String("host"))
 	}
-	gocdServer = gocd.NewServerConfig(config.GOCDHost, config.GOCDPort, config.GOCDUser, config.GOCDPassword)
+	gocdServer = gocd.NewServerConfig(config.GOCDHost, config.GOCDPort, config.GOCDUser, config.GOCDPassword, config.GOCDTimeout)
 }
 
 func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath string, emailListPath string) {
