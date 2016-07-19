@@ -103,10 +103,10 @@ func client(timeout time.Duration) *http.Client {
 
 // NewServerConfig Create a Server object from a config
 func NewServerConfig(host string, port string, user string, password string, timeoutStr string) *Server {
-	timeout := time.Duration(120)
+	timeout := time.Duration(120 * time.Second)
 	i, err := strconv.Atoi(timeoutStr)
 	if err == nil {
-		timeout = time.Duration(i)
+		timeout = time.Duration(i) * time.Second
 	}
 
 	return &Server{
