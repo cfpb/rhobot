@@ -51,4 +51,4 @@ script:
     - gover . coverprofile.txt
 
 after_success:
-    - bash < (curl -s https://codecov.io/bash) -f coverprofile.txt
+    - bash <(curl -s https://codecov.io/bash)
