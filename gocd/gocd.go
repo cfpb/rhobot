@@ -103,10 +103,14 @@ func client(timeout time.Duration) *http.Client {
 
 // NewServerConfig Create a Server object from a config
 func NewServerConfig(host string, port string, user string, password string, timeoutStr string) *Server {
+
+	// timeout casting to seconds
 	timeout := time.Duration(120 * time.Second)
 	i, err := strconv.Atoi(timeoutStr)
 	if err == nil {
 		timeout = time.Duration(i) * time.Second
+	} else {
+		log.Warn("Failed to convert timeout to seconds", err)
 	}
 
 	return &Server{
