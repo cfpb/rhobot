@@ -42,6 +42,6 @@ install:
 script:
     # setup dockerized services
     - docker-compose up -d
-    - sleep 60
+    - sleep 300
     - docker ps
     - go test -v ./...
