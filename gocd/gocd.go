@@ -110,7 +110,7 @@ func NewServerConfig(host string, port string, user string, password string, tim
 	if err == nil {
 		timeout = time.Duration(i) * time.Second
 	} else {
-		log.Warn("Failed to convert timeout to seconds", err)
+		log.Warn("Failed to convert timeout to seconds: ", err)
 	}
 
 	return &Server{
