@@ -13,6 +13,9 @@ env:
         - DOCKER_COMPOSE_VERSION=1.6.0
 
 before_install:
+    # For integration with codecov.io
+    - go get github.com/modocache/gover
+
     # list docker-engine versions
     - apt-cache madison docker-engine
 
@@ -29,14 +32,14 @@ before_install:
 go_import_path: github.com/cfpb/rhobot
 
 install:
-  - go get github.com/Sirupsen/logrus
-  - go get github.com/ahl5esoft/golang-underscore
-  - go get github.com/codegangsta/cli
-  - go get -u github.com/davecgh/go-spew/spew
-  - go get github.com/lib/pq
-  - go get gopkg.in/yaml.v2
-  - go get github.com/flosch/pongo2
-  - go get gopkg.in/gomail.v2
+    - go get github.com/Sirupsen/logrus
+    - go get github.com/ahl5esoft/golang-underscore
+    - go get github.com/codegangsta/cli
+    - go get -u github.com/davecgh/go-spew/spew
+    - go get github.com/lib/pq
+    - go get gopkg.in/yaml.v2
+    - go get github.com/flosch/pongo2
+    - go get gopkg.in/gomail.v2
 
 script:
     # setup dockerized services
@@ -44,3 +47,8 @@ script:
     - sleep 300
     - docker ps
     - go test -v ./...
+    - go list -f '{{if len .TestGoFiles}}"go test -coverprofile={{.Dir}}/.coverprofile {{.ImportPath}}"{{end}}' ./... | xargs -i sh -c {}
+    - gover . coverprofile.txt
+
+after_success:
+    - bash <(curl -s https://codecov.io/bash) -f coverprofile.txt -v
