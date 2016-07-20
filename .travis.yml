@@ -13,7 +13,7 @@ env:
         - DOCKER_COMPOSE_VERSION=1.6.0
 
 before_install:
-    # For integration with coveralls
+    # For integration with codecov.io
     - go get github.com/modocache/gover
 
     # list docker-engine versions
@@ -47,8 +47,8 @@ script:
     - sleep 300
     - docker ps
     - go test -v ./...
-    - go list -f '{{if len .TestGoFiles}}"go test -coverprofile={{.Dir}}/.coverprofile {{.ImportPath}}"{{end}}' ./... | xargs -i sh -c {}
+    - go list -f '{{if len .TestGoFiles}}"go test -coverprofile={{.Dir}}/.coverprofile {{.ImportPath}}"{{end}}' -covermode=atomic ./... | xargs -i sh -c {}
     - gover . coverprofile.txt
 
 after_success:
-    - bash <(curl -s https://codecov.io/bash)
+    - bash <(curl -s https://codecov.io/bash) -f coverprofile.txt -v
