@@ -47,7 +47,7 @@ script:
     - sleep 300
     - docker ps
     - go test -v ./...
-    - go list -f '{{if len .TestGoFiles}}"go test -coverprofile={{.Dir}}/.coverprofile {{.ImportPath}}"{{end}}' -covermode=atomic ./... | xargs -i sh -c {}
+    - go list -f '{{if len .TestGoFiles}}"go test -coverprofile={{.Dir}}/.coverprofile {{.ImportPath}}"{{end}}' ./... | xargs -i sh -c {}
     - gover . coverprofile.txt
 
 after_success:
