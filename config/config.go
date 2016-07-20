@@ -25,6 +25,7 @@ type Config struct {
 	GOCDPort     string
 	GOCDUser     string
 	GOCDPassword string
+	GOCDTimeout  string
 
 	SMTPHost  string
 	SMTPPort  string
@@ -47,6 +48,7 @@ func NewDefaultConfig() *Config {
 		GOCDPort:     "8153",
 		GOCDUser:     "admin",
 		GOCDPassword: "password",
+		GOCDTimeout:  "120",
 		SMTPHost:     "localhost",
 		SMTPPort:     "25",
 		SMTPEmail:    "admin@localhost",
@@ -104,6 +106,11 @@ func NewConfig() (config *Config) {
 	if os.Getenv("GOCDPASSWORD") != "" {
 		log.Debug("Retrieving value from GOCDPASSWORD environment variable.")
 		config.GOCDPassword = os.Getenv("GOCDPASSWORD")
+	}
+
+	if os.Getenv("GOCDTIMEOUT") != "" {
+		log.Debug("Retrieving value from GOCDTIMEOUT environment variable.")
+		config.GOCDTimeout = os.Getenv("GOCDTIMEOUT")
 	}
 
 	if os.Getenv("SMTPHOST") != "" {

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -86,11 +87,11 @@ type Server struct {
 	Port     string
 	User     string
 	Password string
+	Timeout  time.Duration
 }
 
 // client returns a http client with longer timeout and skip verify
-func client() *http.Client {
-	timeout := time.Duration(120 * time.Second)
+func client(timeout time.Duration) *http.Client {
 	transCfg := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
@@ -101,12 +102,23 @@ func client() *http.Client {
 }
 
 // NewServerConfig Create a Server object from a config
-func NewServerConfig(host string, port string, user string, password string) *Server {
+func NewServerConfig(host string, port string, user string, password string, timeoutStr string) *Server {
+
+	// timeout casting to seconds
+	timeout := time.Duration(120 * time.Second)
+	i, err := strconv.Atoi(timeoutStr)
+	if err == nil {
+		timeout = time.Duration(i) * time.Second
+	} else {
+		log.Warn("Failed to convert timeout to seconds: ", err)
+	}
+
 	return &Server{
 		Host:     host,
 		Port:     port,
 		User:     user,
 		Password: password,
+		Timeout:  timeout,
 	}
 }
 
@@ -149,7 +161,7 @@ func (server Server) pipelineConfigPUT(pipeline Pipeline, etag string) (pipeline
 	req.Header.Set("If-Match", etag)
 
 	log.Debugf("Sending request: %v", req)
-	resp, err := client().Do(req)
+	resp, err := client(server.Timeout).Do(req)
 	if err != nil {
 		return
 	}
@@ -197,7 +209,7 @@ func (server Server) pipelineConfigPOST(pipelineConfig PipelineConfig) (pipeline
 	req.Header.Set("Content-Type", "application/json")
 
 	log.Debugf("Sending request: %v", req)
-	resp, err := client().Do(req)
+	resp, err := client(server.Timeout).Do(req)
 	if err != nil {
 		return
 	}
@@ -238,7 +250,7 @@ func (server Server) pipelineGET(pipelineName string) (pipeline Pipeline, etag s
 	req.Header.Set("Content-Type", "application/json")
 
 	log.Debugf("Sending request: %v", req)
-	resp, err := client().Do(req)
+	resp, err := client(server.Timeout).Do(req)
 	if err != nil {
 		return
 	}
