@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"reflect"
 	"strconv"
 	"time"
 
@@ -281,51 +282,70 @@ func (server Server) pipelineGET(pipelineName string) (pipeline Pipeline, etag s
 
 // Push takes a pipeline from a file and sends it to GoCD
 func Push(server *Server, path string, group string) (err error) {
-	pipeline, err := readPipelineJSONFromFile(path)
+	localPipeline, err := readPipelineJSONFromFile(path)
 	if err != nil {
 		return
 	}
 
-	etag, err := Exist(server, pipeline.Name)
+	etag, remotePipeline, err := Exist(server, localPipeline.Name)
 	if err != nil {
 		log.Info(err)
 	}
 
+	Compare(localPipeline, remotePipeline)
+
 	if etag == "" {
-		pipelineConfig := PipelineConfig{group, pipeline}
+		pipelineConfig := PipelineConfig{group, localPipeline}
 		_, err = server.pipelineConfigPOST(pipelineConfig)
 	} else {
-		_, err = server.pipelineConfigPUT(pipeline, etag)
+		_, err = server.pipelineConfigPUT(localPipeline, etag)
 	}
 	return
 }
 
 // Pull reads pipeline from a file, finds it on GoCD, and updates the file
 func Pull(server *Server, path string) (err error) {
-	pipeline, err := readPipelineJSONFromFile(path)
+	localPipeline, err := readPipelineJSONFromFile(path)
 	if err != nil {
 		return
 	}
 
-	name := pipeline.Name
-	err = Clone(server, path, name)
+	name := localPipeline.Name
+	remotePipeline, err := Clone(server, path, name)
+
+	Compare(localPipeline, remotePipeline)
+
 	return
 }
 
 // Exist checks if a pipeline of a given name exist, returns it's etag or an empty string
-func Exist(server *Server, name string) (etag string, err error) {
-	_, etag, err = server.pipelineGET(name)
+func Exist(server *Server, name string) (etag string, pipeline Pipeline, err error) {
+	pipeline, etag, err = server.pipelineGET(name)
 	return
 }
 
 // Clone finds a pipeline by name on GoCD and saves it to a file
-func Clone(server *Server, path string, name string) (err error) {
-	pipelineFetched, _, err := server.pipelineGET(name)
+func Clone(server *Server, path string, name string) (pipeline Pipeline, err error) {
+	pipeline, _, err = server.pipelineGET(name)
 	if err != nil {
 		return
 	}
 
-	pipelineJSON, _ := json.MarshalIndent(pipelineFetched, "", "    ")
+	err = writePipeline(path, pipeline)
+	return
+}
+
+// Compare saves copies of the local and remote pipeline if different
+func Compare(localPipeline Pipeline, remotePipeline Pipeline) {
+
+	if !reflect.DeepEqual(localPipeline, remotePipeline) {
+		log.Warn("Local and Remote are different")
+	}
+}
+
+// writePipeline helper function to write a pipeline to file
+func writePipeline(path string, pipeline Pipeline) (err error) {
+	pipelineJSON, _ := json.MarshalIndent(pipeline, "", "    ")
 	err = ioutil.WriteFile(path, pipelineJSON, 0666)
 	return
 }
