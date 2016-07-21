@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"path/filepath"
 	"reflect"
 	"strconv"
 	"time"
@@ -292,7 +293,7 @@ func Push(server *Server, path string, group string) (err error) {
 		log.Info(err)
 	}
 
-	Compare(localPipeline, remotePipeline)
+	Compare(localPipeline, remotePipeline, path)
 
 	if etag == "" {
 		pipelineConfig := PipelineConfig{group, localPipeline}
@@ -313,7 +314,7 @@ func Pull(server *Server, path string) (err error) {
 	name := localPipeline.Name
 	remotePipeline, err := Clone(server, path, name)
 
-	Compare(localPipeline, remotePipeline)
+	Compare(localPipeline, remotePipeline, path)
 
 	return
 }
@@ -336,10 +337,28 @@ func Clone(server *Server, path string, name string) (pipeline Pipeline, err err
 }
 
 // Compare saves copies of the local and remote pipeline if different
-func Compare(localPipeline Pipeline, remotePipeline Pipeline) {
+func Compare(localPipeline Pipeline, remotePipeline Pipeline, path string) {
 
 	if !reflect.DeepEqual(localPipeline, remotePipeline) {
 		log.Warn("Local and Remote are different")
+
+		extension := filepath.Ext(path) //should be .json
+		filepath := path[0 : len(path)-len(extension)]
+		localBakPath := filepath + ".local.bak.json"
+		remoteBakPath := filepath + ".remote.bak.json"
+
+		log.Info("Saving Local Backup: ", localBakPath)
+		errLocal := writePipeline(localBakPath, localPipeline)
+		log.Info("Saving Remote Backup: ", remoteBakPath)
+		errRemote := writePipeline(remoteBakPath, remotePipeline)
+
+		if errLocal != nil {
+			log.Warn("Error while writing backup for local pipeline: ", errLocal)
+		}
+		if errRemote != nil {
+			log.Warn("Error while writing backup for local pipeline: ", errLocal)
+		}
+
 	}
 }
 
