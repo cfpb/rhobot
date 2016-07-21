@@ -167,7 +167,7 @@ func main() {
 							name := c.Args()[0]
 							path := c.Args()[1]
 							log.Infof("Cloning pipeline %v to %v...", name, path)
-							if err := gocd.Clone(gocdServer, path, name); err != nil {
+							if _, err := gocd.Clone(gocdServer, path, name); err != nil {
 								log.Fatal("Failed to clone pipeline config: ", err)
 							}
 							log.Info("Success!")

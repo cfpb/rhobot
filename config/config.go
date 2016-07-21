@@ -46,8 +46,8 @@ func NewDefaultConfig() *Config {
 		PgPassword:   "password",
 		GOCDHost:     "http://localhost",
 		GOCDPort:     "8153",
-		GOCDUser:     "admin",
-		GOCDPassword: "password",
+		GOCDUser:     "",
+		GOCDPassword: "",
 		GOCDTimeout:  "120",
 		SMTPHost:     "localhost",
 		SMTPPort:     "25",
@@ -98,15 +98,11 @@ func NewConfig() (config *Config) {
 		config.GOCDPort = os.Getenv("GOCDPORT")
 	}
 
-	if os.Getenv("GOCDUSER") != "" {
-		log.Debug("Retrieving value from GOCDUSER environment variable.")
-		config.GOCDUser = os.Getenv("GOCDUSER")
-	}
+	log.Debug("Retrieving value from GOCDUSER environment variable.")
+	config.GOCDUser = os.Getenv("GOCDUSER")
 
-	if os.Getenv("GOCDPASSWORD") != "" {
-		log.Debug("Retrieving value from GOCDPASSWORD environment variable.")
-		config.GOCDPassword = os.Getenv("GOCDPASSWORD")
-	}
+	log.Debug("Retrieving value from GOCDPASSWORD environment variable.")
+	config.GOCDPassword = os.Getenv("GOCDPASSWORD")
 
 	if os.Getenv("GOCDTIMEOUT") != "" {
 		log.Debug("Retrieving value from GOCDTIMEOUT environment variable.")

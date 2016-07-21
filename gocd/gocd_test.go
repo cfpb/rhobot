@@ -64,7 +64,7 @@ func TestUnmarshalFidelityLoss(t *testing.T) {
 }
 
 func TestGocdPOST(t *testing.T) {
-	etag, err := Exist(server, "test")
+	etag, _, err := Exist(server, "test")
 	if err == nil && etag != "" {
 		log.Info("Cannot run TestGoCDPOST, 'test' pipeline already exists.")
 		t.SkipNow()
@@ -87,7 +87,7 @@ func TestGocdGET(t *testing.T) {
 }
 
 func TestExist(t *testing.T) {
-	etag, err := Exist(server, "test")
+	etag, _, err := Exist(server, "test")
 
 	if err != nil {
 		t.Error(err)
@@ -152,7 +152,7 @@ func TestGocdTimeout(t *testing.T) {
 		Timeout:  time.Duration(1), //1ns
 	}
 
-	etag, err := Exist(serverA, "test")
+	etag, _, err := Exist(serverA, "test")
 	if etag == "" {
 		t.Error("test does not exist as a gocd pipeline")
 	}
@@ -160,7 +160,7 @@ func TestGocdTimeout(t *testing.T) {
 		t.Error("threw an error but should not have", err)
 	}
 
-	etag, err = Exist(serverB, "test")
+	etag, _, err = Exist(serverB, "test")
 	if etag != "" {
 		t.Error("got an etag but should not have", etag)
 	}
