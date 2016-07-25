@@ -155,7 +155,7 @@ func (config *Config) SetLogLevel(level string) {
 
 // SetDBURI extracts Postgres connection variables from a DB URI
 func (config *Config) SetDBURI(dbURI string) {
-	dbURIRegex := regexp.MustCompile(`postgres://(?P<pg_user>\w+):(?P<pg_password>\w+)@(?P<pg_host>\w+):(?P<pg_port>\w+)/(?P<pg_database>\w+).*`)
+	dbURIRegex := regexp.MustCompile(`postgres://(?P<pg_user>\w+):(?P<pg_password>.+?)@(?P<pg_host>\w+):(?P<pg_port>\w+)/(?P<pg_database>\w+).*`)
 
 	match := dbURIRegex.FindStringSubmatch(dbURI)
 	if match == nil {
