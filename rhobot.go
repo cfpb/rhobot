@@ -278,7 +278,6 @@ func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath
 
 	// Bad Exit
 	if HCerrs != nil {
-		spew.Dump(HCerrs)
-		log.Fatal("Healthchecks Failed")
+		log.Fatal("Healthchecks Failed:\n", spew.Sdump(HCerrs))
 	}
 }
