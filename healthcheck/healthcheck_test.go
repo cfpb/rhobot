@@ -41,7 +41,6 @@ func TestRunningBasicChecks(t *testing.T) {
 			t.Fail()
 		}
 	}
-
 }
 
 func TestEvaluatingBasicChecks(t *testing.T) {

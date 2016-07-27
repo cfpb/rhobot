@@ -83,8 +83,8 @@ func (healthChecks *Format) RejectBadHealthChecks() {
 
 // RunHealthChecks executes all health checks in the specified file
 func (healthChecks *Format) RunHealthChecks(cxn *sql.DB) {
-	for _, test := range healthChecks.Tests {
-		test.RunHealthCheck(cxn)
+	for i := 0; i < len(healthChecks.Tests); i++ {
+		healthChecks.Tests[i].RunHealthCheck(cxn)
 	}
 }
 
