@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -342,8 +343,7 @@ func Compare(localPipeline Pipeline, remotePipeline Pipeline, path string) {
 	if !reflect.DeepEqual(localPipeline, remotePipeline) {
 		log.Warn("Local and Remote are different")
 
-		extension := filepath.Ext(path) //should be .json
-		filepath := path[0 : len(path)-len(extension)]
+		filepath := strings.TrimSuffix(path, filepath.Ext(path))
 		localBakPath := filepath + ".local.bak.json"
 		remoteBakPath := filepath + ".remote.bak.json"
 
