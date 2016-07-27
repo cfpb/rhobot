@@ -58,7 +58,7 @@ func ReadHealthCheckYAMLFromFile(path string) (format Format, err error) {
 }
 
 // ValidateHealthChecks validates all healthchecks in specified file
-func (healthChecks Format) ValidateHealthChecks() bool {
+func (healthChecks *Format) ValidateHealthChecks() bool {
 	for _, test := range healthChecks.Tests {
 		if !test.ValidateHealthCheck() {
 			return false
@@ -68,7 +68,7 @@ func (healthChecks Format) ValidateHealthChecks() bool {
 }
 
 // RejectBadHealthChecks validates all healthchecks in specified file
-func (healthChecks Format) RejectBadHealthChecks() Format {
+func (healthChecks *Format) RejectBadHealthChecks() {
 
 	var GoodTests []SQLHealthCheck
 
@@ -79,19 +79,17 @@ func (healthChecks Format) RejectBadHealthChecks() Format {
 	}
 
 	healthChecks.Tests = GoodTests
-	return healthChecks
 }
 
 // RunHealthChecks executes all health checks in the specified file
-func (healthChecks Format) RunHealthChecks(cxn *sql.DB) Format {
+func (healthChecks *Format) RunHealthChecks(cxn *sql.DB) {
 	for _, test := range healthChecks.Tests {
 		test.RunHealthCheck(cxn)
 	}
-	return healthChecks
 }
 
 // PreformHealthChecks runs and evaluates healthChecks one at a time
-func (healthChecks Format) PreformHealthChecks(cxn *sql.DB) (results []SQLHealthCheck, errors []HCError) {
+func (healthChecks *Format) PreformHealthChecks(cxn *sql.DB) (results []SQLHealthCheck, errors []HCError) {
 	for i, test := range healthChecks.Tests {
 		if cxn != nil {
 			test.RunHealthCheck(cxn)

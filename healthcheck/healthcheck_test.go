@@ -5,7 +5,6 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/ahl5esoft/golang-underscore"
 	"github.com/cfpb/rhobot/config"
 	"github.com/cfpb/rhobot/database"
 	"github.com/cfpb/rhobot/report"
@@ -36,19 +35,19 @@ func TestRunningBasicChecks(t *testing.T) {
 	healthChecks, _ := ReadHealthCheckYAMLFromFile("healthchecksTest.yml")
 	healthChecks.RunHealthChecks(cxn)
 
-	underscore.Each(healthChecks, func(hc SQLHealthCheck, i int) {
+	for _, hc := range healthChecks.Tests {
 		if !hc.Passed {
 			log.Error("Basic HealthCheck Test Failed")
 			t.Fail()
 		}
-	})
+	}
+
 }
 
 func TestEvaluatingBasicChecks(t *testing.T) {
 	cxn := database.GetPGConnection(conf.DBURI())
 	healthChecks, _ := ReadHealthCheckYAMLFromFile("healthchecksTest.yml")
-	healthChecks.RunHealthChecks(cxn)
-	results, err := healthChecks.PreformHealthChecks(nil)
+	results, err := healthChecks.PreformHealthChecks(cxn)
 
 	if err != nil {
 		log.Error(err)
@@ -58,13 +57,18 @@ func TestEvaluatingBasicChecks(t *testing.T) {
 		log.Error("Healthchecks results had the wrong length")
 		t.Fail()
 	}
+	for _, result := range results {
+		if !result.Passed {
+			log.Error("Basic HealthCheck Test Failed")
+			t.Fail()
+		}
+	}
 }
 
 func TestEvaluatingErrorsChecks(t *testing.T) {
 	cxn := database.GetPGConnection(conf.DBURI())
 	healthChecks, _ := ReadHealthCheckYAMLFromFile("healthchecksErrors.yml")
-	healthChecks.RunHealthChecks(cxn)
-	results, err := healthChecks.PreformHealthChecks(nil)
+	results, err := healthChecks.PreformHealthChecks(cxn)
 
 	if err == nil {
 		log.Error("Healthchecks did not throw an error, but should have")
@@ -83,8 +87,7 @@ func TestEvaluatingErrorsChecks(t *testing.T) {
 func TestEvaluatingFatalChecks(t *testing.T) {
 	cxn := database.GetPGConnection(conf.DBURI())
 	healthChecks, _ := ReadHealthCheckYAMLFromFile("healthchecksFatal.yml")
-	healthChecks.RunHealthChecks(cxn)
-	results, err := healthChecks.PreformHealthChecks(nil)
+	results, err := healthChecks.PreformHealthChecks(cxn)
 
 	if err == nil {
 		log.Error("Healthchecks did not throw an error, but should have")
@@ -106,9 +109,8 @@ func TestEvaluatingIncompleteChecks(t *testing.T) {
 		t.Fail()
 	}
 
-	healthChecks = healthChecks.RejectBadHealthChecks()
-	healthChecks.RunHealthChecks(cxn)
-	results, err := healthChecks.PreformHealthChecks(nil)
+	healthChecks.RejectBadHealthChecks()
+	results, err := healthChecks.PreformHealthChecks(cxn)
 
 	if err != nil {
 		log.Error("Evaluating Healthchecks threw an error")
@@ -139,8 +141,7 @@ func TestPreformAllChecks(t *testing.T) {
 func TestEvaluatingInvalidChecks(t *testing.T) {
 	cxn := database.GetPGConnection(conf.DBURI())
 	healthChecks, _ := ReadHealthCheckYAMLFromFile("healthchecksInvalid.yml")
-	healthChecks.RunHealthChecks(cxn)
-	results, err := healthChecks.PreformHealthChecks(nil)
+	results, err := healthChecks.PreformHealthChecks(cxn)
 
 	if err == nil {
 		log.Error("Healthchecks did not throw an error, but should have")
