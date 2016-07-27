@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"io"
+	"net/url"
 	"os"
 	"regexp"
 
@@ -168,12 +169,21 @@ func (config *Config) SetDBURI(dbURI string) {
 
 // DBURI generates a DB URI from the proper configruation options
 func (config *Config) DBURI() (dbURI string) {
+	parsedURI := make(map[string]interface{})
+
+	//URL Encode Postgres variables
+	parsedURI["PgUser"] = url.QueryEscape(config.PgUser)
+	parsedURI["PgPassword"] = url.QueryEscape(config.PgPassword)
+	parsedURI["PgHost"] = url.QueryEscape(config.PgHost)
+	parsedURI["PgPort"] = url.QueryEscape(config.PgPort)
+	parsedURI["PgDatabase"] = url.QueryEscape(config.PgDatabase)
+
 	dbURI = fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=require",
-		config.PgUser,
-		config.PgPassword,
-		config.PgHost,
-		config.PgPort,
-		config.PgDatabase)
+		parsedURI["PgUser"],
+		parsedURI["PgPassword"],
+		parsedURI["PgHost"],
+		parsedURI["PgPort"],
+		parsedURI["PgDatabase"])
 
 	return
 }
