@@ -6,7 +6,6 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/ahl5esoft/golang-underscore"
 	"github.com/cfpb/rhobot/config"
 	"github.com/cfpb/rhobot/database"
 	"github.com/cfpb/rhobot/gocd"
@@ -167,7 +166,7 @@ func main() {
 							name := c.Args()[0]
 							path := c.Args()[1]
 							log.Infof("Cloning pipeline %v to %v...", name, path)
-							if err := gocd.Clone(gocdServer, path, name); err != nil {
+							if _, err := gocd.Clone(gocdServer, path, name); err != nil {
 								log.Fatal("Failed to clone pipeline config: ", err)
 							}
 							log.Info("Success!")
@@ -203,19 +202,17 @@ func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath
 	}
 	cxn := database.GetPGConnection(config.DBURI())
 
-	// TODO the error returned from PreformHealthChecks determis a bad exit
 	results, HCerrs := healthChecks.PreformHealthChecks(cxn)
-
 	numErrors := 0
 	fatal := false
-	underscore.Each(HCerrs, func(n healthcheck.HCError, i int) {
-		if strings.Contains(strings.ToUpper(n.Err), "FATAL") {
+	for _, hcerr := range HCerrs {
+		if strings.Contains(strings.ToUpper(hcerr.Err), "FATAL") {
 			fatal = true
 		}
-		if strings.Contains(strings.ToUpper(n.Err), "ERROR") {
+		if strings.Contains(strings.ToUpper(hcerr.Err), "ERROR") {
 			numErrors = numErrors + 1
 		}
-	})
+	}
 
 	var elements []report.Element
 	for _, val := range results {
@@ -278,7 +275,6 @@ func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath
 
 	// Bad Exit
 	if HCerrs != nil {
-		spew.Dump(HCerrs)
-		log.Fatal("Healthchecks Failed")
+		log.Fatal("Healthchecks Failed:\n", spew.Sdump(HCerrs))
 	}
 }

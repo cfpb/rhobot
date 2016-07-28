@@ -33,7 +33,6 @@ go_import_path: github.com/cfpb/rhobot
 
 install:
     - go get github.com/Sirupsen/logrus
-    - go get github.com/ahl5esoft/golang-underscore
     - go get github.com/codegangsta/cli
     - go get -u github.com/davecgh/go-spew/spew
     - go get github.com/lib/pq

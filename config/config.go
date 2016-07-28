@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"io"
+	"net/url"
 	"os"
 	"regexp"
 
@@ -46,8 +47,8 @@ func NewDefaultConfig() *Config {
 		PgPassword:   "password",
 		GOCDHost:     "http://localhost",
 		GOCDPort:     "8153",
-		GOCDUser:     "admin",
-		GOCDPassword: "password",
+		GOCDUser:     "",
+		GOCDPassword: "",
 		GOCDTimeout:  "120",
 		SMTPHost:     "localhost",
 		SMTPPort:     "25",
@@ -98,15 +99,11 @@ func NewConfig() (config *Config) {
 		config.GOCDPort = os.Getenv("GOCDPORT")
 	}
 
-	if os.Getenv("GOCDUSER") != "" {
-		log.Debug("Retrieving value from GOCDUSER environment variable.")
-		config.GOCDUser = os.Getenv("GOCDUSER")
-	}
+	log.Debug("Retrieving value from GOCDUSER environment variable.")
+	config.GOCDUser = os.Getenv("GOCDUSER")
 
-	if os.Getenv("GOCDPASSWORD") != "" {
-		log.Debug("Retrieving value from GOCDPASSWORD environment variable.")
-		config.GOCDPassword = os.Getenv("GOCDPASSWORD")
-	}
+	log.Debug("Retrieving value from GOCDPASSWORD environment variable.")
+	config.GOCDPassword = os.Getenv("GOCDPASSWORD")
 
 	if os.Getenv("GOCDTIMEOUT") != "" {
 		log.Debug("Retrieving value from GOCDTIMEOUT environment variable.")
@@ -155,7 +152,7 @@ func (config *Config) SetLogLevel(level string) {
 
 // SetDBURI extracts Postgres connection variables from a DB URI
 func (config *Config) SetDBURI(dbURI string) {
-	dbURIRegex := regexp.MustCompile(`postgres://(?P<pg_user>\w+):(?P<pg_password>\w+)@(?P<pg_host>\w+):(?P<pg_port>\w+)/(?P<pg_database>\w+).*`)
+	dbURIRegex := regexp.MustCompile(`postgres://(?P<pg_user>\w+):(?P<pg_password>.+?)@(?P<pg_host>\w+):(?P<pg_port>\w+)/(?P<pg_database>\w+).*`)
 
 	match := dbURIRegex.FindStringSubmatch(dbURI)
 	if match == nil {
@@ -172,12 +169,21 @@ func (config *Config) SetDBURI(dbURI string) {
 
 // DBURI generates a DB URI from the proper configruation options
 func (config *Config) DBURI() (dbURI string) {
+	parsedURI := make(map[string]interface{})
+
+	//URL Encode Postgres variables
+	parsedURI["PgUser"] = url.QueryEscape(config.PgUser)
+	parsedURI["PgPassword"] = url.QueryEscape(config.PgPassword)
+	parsedURI["PgHost"] = url.QueryEscape(config.PgHost)
+	parsedURI["PgPort"] = url.QueryEscape(config.PgPort)
+	parsedURI["PgDatabase"] = url.QueryEscape(config.PgDatabase)
+
 	dbURI = fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=require",
-		config.PgUser,
-		config.PgPassword,
-		config.PgHost,
-		config.PgPort,
-		config.PgDatabase)
+		parsedURI["PgUser"],
+		parsedURI["PgPassword"],
+		parsedURI["PgHost"],
+		parsedURI["PgPort"],
+		parsedURI["PgDatabase"])
 
 	return
 }

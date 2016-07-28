@@ -30,9 +30,9 @@ func TestLogLevelingFiltering(t *testing.T) {
 	}
 	originalReportSet := report.Set{Elements: elements, Metadata: metadata}
 	TestLogLevelResults := map[string]int{
-		"Debug": 5,
-		"Info":  4,
-		"Warn":  3,
+		"Debug": 6,
+		"Info":  5,
+		"Warn":  4,
 		"Error": 2,
 		"Fatal": 1,
 	}

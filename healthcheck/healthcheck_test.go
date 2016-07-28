@@ -8,7 +8,6 @@ import (
 	"github.com/cfpb/rhobot/config"
 	"github.com/cfpb/rhobot/database"
 	"github.com/cfpb/rhobot/report"
-	"github.com/davecgh/go-spew/spew"
 )
 
 var conf *config.Config
@@ -35,13 +34,19 @@ func TestRunningBasicChecks(t *testing.T) {
 	cxn := database.GetPGConnection(conf.DBURI())
 	healthChecks, _ := ReadHealthCheckYAMLFromFile("healthchecksTest.yml")
 	healthChecks.RunHealthChecks(cxn)
+
+	for _, hc := range healthChecks.Tests {
+		if !hc.Passed {
+			log.Error("Basic HealthCheck Test Failed")
+			t.Fail()
+		}
+	}
 }
 
 func TestEvaluatingBasicChecks(t *testing.T) {
 	cxn := database.GetPGConnection(conf.DBURI())
 	healthChecks, _ := ReadHealthCheckYAMLFromFile("healthchecksTest.yml")
-	healthChecks.RunHealthChecks(cxn)
-	results, err := healthChecks.EvaluateHealthChecks()
+	results, err := healthChecks.PreformHealthChecks(cxn)
 
 	if err != nil {
 		log.Error(err)
@@ -51,13 +56,18 @@ func TestEvaluatingBasicChecks(t *testing.T) {
 		log.Error("Healthchecks results had the wrong length")
 		t.Fail()
 	}
+	for _, result := range results {
+		if !result.Passed {
+			log.Error("Basic HealthCheck Test Failed")
+			t.Fail()
+		}
+	}
 }
 
 func TestEvaluatingErrorsChecks(t *testing.T) {
 	cxn := database.GetPGConnection(conf.DBURI())
 	healthChecks, _ := ReadHealthCheckYAMLFromFile("healthchecksErrors.yml")
-	healthChecks.RunHealthChecks(cxn)
-	results, err := healthChecks.EvaluateHealthChecks()
+	results, err := healthChecks.PreformHealthChecks(cxn)
 
 	if err == nil {
 		log.Error("Healthchecks did not throw an error, but should have")
@@ -67,33 +77,7 @@ func TestEvaluatingErrorsChecks(t *testing.T) {
 		log.Error("Healthcheck errors had the wrong length")
 		t.Fail()
 	}
-	if len(results) != 4 {
-		log.Error("Healthcheck results had the wrong length")
-		t.Fail()
-	}
-}
-
-func TestPreformingingErrorsChecks(t *testing.T) {
-	cxn := database.GetPGConnection(conf.DBURI())
-	healthChecks, _ := ReadHealthCheckYAMLFromFile("healthchecksErrors.yml")
-	results, HCerrs := healthChecks.PreformHealthChecks(cxn)
-
-	if log.GetLevel() == log.DebugLevel {
-		log.Debug("Spew healthcheck results")
-		spew.Dump(results)
-		log.Debug("Spew healthcheck errors")
-		spew.Dump(HCerrs)
-	}
-
-	if HCerrs == nil {
-		log.Error("Healthchecks did not throw an error, but should have")
-		t.Fail()
-	}
-	if len(HCerrs) != 3 {
-		log.Error("Healthcheck errors had the wrong length")
-		t.Fail()
-	}
-	if len(results) != 4 {
+	if len(results) != 5 {
 		log.Error("Healthcheck results had the wrong length")
 		t.Fail()
 	}
@@ -102,15 +86,14 @@ func TestPreformingingErrorsChecks(t *testing.T) {
 func TestEvaluatingFatalChecks(t *testing.T) {
 	cxn := database.GetPGConnection(conf.DBURI())
 	healthChecks, _ := ReadHealthCheckYAMLFromFile("healthchecksFatal.yml")
-	healthChecks.RunHealthChecks(cxn)
-	results, err := healthChecks.EvaluateHealthChecks()
+	results, err := healthChecks.PreformHealthChecks(cxn)
 
 	if err == nil {
 		log.Error("Healthchecks did not throw an error, but should have")
 		t.Fail()
 	}
 
-	if len(results) != 1 {
+	if len(results) != 2 {
 		log.Error("Healthcheck results had the wrong length")
 		t.Fail()
 	}
@@ -125,9 +108,8 @@ func TestEvaluatingIncompleteChecks(t *testing.T) {
 		t.Fail()
 	}
 
-	healthChecks = healthChecks.RejectBadHealthChecks()
-	healthChecks.RunHealthChecks(cxn)
-	results, err := healthChecks.EvaluateHealthChecks()
+	healthChecks.RejectBadHealthChecks()
+	results, err := healthChecks.PreformHealthChecks(cxn)
 
 	if err != nil {
 		log.Error("Evaluating Healthchecks threw an error")
@@ -149,7 +131,7 @@ func TestPreformAllChecks(t *testing.T) {
 		log.Error("Healthchecks did not throw an error, but should have")
 		t.Fail()
 	}
-	if len(results) != 5 {
+	if len(results) != 6 {
 		log.Error("Healthcheck results had the wrong length")
 		t.Fail()
 	}
@@ -158,8 +140,7 @@ func TestPreformAllChecks(t *testing.T) {
 func TestEvaluatingInvalidChecks(t *testing.T) {
 	cxn := database.GetPGConnection(conf.DBURI())
 	healthChecks, _ := ReadHealthCheckYAMLFromFile("healthchecksInvalid.yml")
-	healthChecks.RunHealthChecks(cxn)
-	results, err := healthChecks.EvaluateHealthChecks()
+	results, err := healthChecks.PreformHealthChecks(cxn)
 
 	if err == nil {
 		log.Error("Healthchecks did not throw an error, but should have")

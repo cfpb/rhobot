@@ -58,7 +58,7 @@ func ReadHealthCheckYAMLFromFile(path string) (format Format, err error) {
 }
 
 // ValidateHealthChecks validates all healthchecks in specified file
-func (healthChecks Format) ValidateHealthChecks() bool {
+func (healthChecks *Format) ValidateHealthChecks() bool {
 	for _, test := range healthChecks.Tests {
 		if !test.ValidateHealthCheck() {
 			return false
@@ -68,7 +68,7 @@ func (healthChecks Format) ValidateHealthChecks() bool {
 }
 
 // RejectBadHealthChecks validates all healthchecks in specified file
-func (healthChecks Format) RejectBadHealthChecks() Format {
+func (healthChecks *Format) RejectBadHealthChecks() {
 
 	var GoodTests []SQLHealthCheck
 
@@ -79,39 +79,21 @@ func (healthChecks Format) RejectBadHealthChecks() Format {
 	}
 
 	healthChecks.Tests = GoodTests
-	return healthChecks
 }
 
 // RunHealthChecks executes all health checks in the specified file
-func (healthChecks Format) RunHealthChecks(cxn *sql.DB) Format {
-	for _, test := range healthChecks.Tests {
-		test.RunHealthCheck(cxn)
+func (healthChecks *Format) RunHealthChecks(cxn *sql.DB) {
+	for i := 0; i < len(healthChecks.Tests); i++ {
+		healthChecks.Tests[i].RunHealthCheck(cxn)
 	}
-	return healthChecks
-}
-
-// EvaluateHealthChecks contains logic for handling the results of RunHealthChecks
-func (healthChecks Format) EvaluateHealthChecks() (results []SQLHealthCheck, errors []HCError) {
-	for _, test := range healthChecks.Tests {
-		results = append(results, test)
-		hcErr := test.EvaluateHealthCheck()
-
-		if hcErr.Err != "" {
-			errors = append(errors, hcErr)
-		}
-
-		if hcErr.Exit {
-			break
-		}
-
-	}
-	return
 }
 
 // PreformHealthChecks runs and evaluates healthChecks one at a time
-func (healthChecks Format) PreformHealthChecks(cxn *sql.DB) (results []SQLHealthCheck, errors []HCError) {
-	for _, test := range healthChecks.Tests {
-		test.RunHealthCheck(cxn)
+func (healthChecks *Format) PreformHealthChecks(cxn *sql.DB) (results []SQLHealthCheck, errors []HCError) {
+	for i, test := range healthChecks.Tests {
+		if cxn != nil {
+			test.RunHealthCheck(cxn)
+		}
 		results = append(results, test)
 		hcErr := test.EvaluateHealthCheck()
 
@@ -120,6 +102,10 @@ func (healthChecks Format) PreformHealthChecks(cxn *sql.DB) (results []SQLHealth
 		}
 
 		if hcErr.Exit {
+			//add unfinished healthchecks
+			for _, unfinished := range healthChecks.Tests[i+1:] {
+				results = append(results, unfinished)
+			}
 			break
 		}
 
@@ -150,7 +136,7 @@ func (healthCheck SQLHealthCheck) ValidateHealthCheck() bool {
 }
 
 // RunHealthCheck runs through a single healthcheck and saves the result
-func (healthCheck SQLHealthCheck) RunHealthCheck(cxn *sql.DB) {
+func (healthCheck *SQLHealthCheck) RunHealthCheck(cxn *sql.DB) {
 	answer := ""
 
 	rows, err := cxn.Query(healthCheck.Query)
@@ -168,6 +154,7 @@ func (healthCheck SQLHealthCheck) RunHealthCheck(cxn *sql.DB) {
 		healthCheck.Equal = healthCheck.Expected == answer
 		healthCheck.Actual = answer
 	}
+
 }
 
 // EvaluateHealthCheck runs through a single healthcheck and acts on the result
@@ -192,13 +179,14 @@ func (healthCheck *SQLHealthCheck) EvaluateHealthCheck() (err HCError) {
 			log.Warnf("Healthcheck failed\n%s", string(prettyHealthCheck))
 		case "info":
 			log.Infof("Healthcheck failed\n%s", string(prettyHealthCheck))
+		case "debug":
+			log.Debugf("Healthcheck failed\n%s", string(prettyHealthCheck))
 		default:
 			log.Errorf("Undefined severity level:%s\n%s", strings.ToUpper(healthCheck.Severity), string(prettyHealthCheck))
 		}
 	} else {
 		log.Printf("%s healthcheck passed\n%s\n", strings.ToUpper(healthCheck.Severity), string(prettyHealthCheck))
 	}
-
 	return err
 }
 
