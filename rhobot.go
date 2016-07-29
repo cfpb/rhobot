@@ -91,12 +91,12 @@ func main() {
 
 				if c.String("report") != "" {
 					reportPath = c.String("report")
-					log.Debugf("Generating report at %v", reportPath)
+					log.Infof("Generating report at %v", reportPath)
 				}
 
 				if c.String("email") != "" {
 					emailListPath = c.String("email")
-					log.Debugf("Emailing report to %v", emailListPath)
+					log.Infof("Emailing report to %v", emailListPath)
 				}
 
 				healthcheckRunner(conf, healthcheckPath, reportPath, emailListPath)
@@ -237,7 +237,10 @@ func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath
 		prr := report.NewPongo2ReportRunnerFromString(healthcheck.TemplateHealthcheckHTML)
 		reader, _ := prr.ReportReader(rs)
 		fhr := report.FileHandler{Filename: reportPath}
-		_ = fhr.HandleReport(reader)
+		err = fhr.HandleReport(reader)
+		if err != nil {
+			log.Error("error writing report to PG database: ", err)
+		}
 	}
 
 	// Email report
@@ -269,7 +272,7 @@ func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath
 				}
 				err = ehr.HandleReport(reader)
 				if err != nil {
-					log.Warn("Failed to email report: ", err)
+					log.Error("Failed to email report: ", err)
 				}
 			}
 		}
