@@ -18,10 +18,12 @@ CREATE TABLE IF NOT EXISTS {{metadata.schema}}.{{metadata.table}}
   severity text,
   "timestamp" timestamp with time zone
 );
+
+INSERT INTO "{{metadata.schema}}"."{{metadata.table}}" ("title", "query", "executed", "expected", "actual", "severity", "timestamp") VALUES
 {% for element in elements %}
-INSERT INTO "{{metadata.schema}}"."{{metadata.table}}" ("title", "query", "executed", "expected", "actual", "severity", "timestamp") VALUES ('{{ element.Title }}', '{{ element.Query | safe  }}', '{{ element.Passed}}', '{{ element.Expected }}', '{{ element.Actual }}', '{{ element.Severity }}', '{{ metadata.timestamp }}');
-{% endfor %}
-`
+('{{ element.Title }}', '{{ element.Query | safe  }}', '{{ element.Passed}}', '{{ element.Expected }}', '{{ element.Actual }}', '{{ element.Severity }}', '{{ metadata.timestamp }}') ` +
+	`{% if forloop.Last%};{%else%},{%endif%}` +
+	`{% endfor %}`
 
 // TemplateHealthcheckHTML pongo2 template for healthchecks
 const TemplateHealthcheckHTML = `

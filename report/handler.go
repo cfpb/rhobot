@@ -133,7 +133,6 @@ func (pg PGHandler) HandleReport(reader io.Reader) (err error) {
 	if err != nil {
 		log.Error("query failed: ", err)
 	} else {
-		//TODO this lies, it says only 1 row was affected. Make it tell the truth
 		rows, _ := result.RowsAffected()
 		log.Info(rows, " Row(s) Affected")
 
