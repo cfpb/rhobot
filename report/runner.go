@@ -12,7 +12,7 @@ import (
 // JSONReportRunner initilization should contain any variables used for report
 type JSONReportRunner struct{}
 
-// ReportReader Implementation for ReportRunner
+// ReportReader Implementation for JSONReportRunner
 func (jrr JSONReportRunner) ReportReader(reportSet Set) (io.Reader, error) {
 	reportJSON, err := json.MarshalIndent(reportSet.GetReportMap(), "", "    ")
 	if err != nil {
@@ -44,7 +44,7 @@ type Pongo2ReportRunner struct {
 	Template pongo2.Template
 }
 
-// ReportReader Implementation for ReportRunner
+// ReportReader Implementation for Pongo2ReportRunner
 func (p2rr Pongo2ReportRunner) ReportReader(reportSet Set) (io.Reader, error) {
 	reportBytes, err := p2rr.Template.ExecuteBytes(reportSet.GetReportMap())
 	if err != nil {

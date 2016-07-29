@@ -227,23 +227,22 @@ func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath
 		"name":      healthChecks.Name,
 		"db_name":   config.PgDatabase,
 		"footer":    healthcheck.FooterHealthcheck,
-		"timestamp": time.Now().UTC().String(),
+		"timestamp": time.Now().Format(time.ANSIC),
 		"status":    healthcheck.StatusHealthchecks(numErrors, fatal),
 	}
-
-	prr := report.NewPongo2ReportRunnerFromString(healthcheck.TemplateHealthcheck)
 	rs := report.Set{Elements: elements, Metadata: metadata}
-	reader, _ := prr.ReportReader(rs)
 
 	// Write report to file
 	if reportPath != "" {
+		prr := report.NewPongo2ReportRunnerFromString(healthcheck.TemplateHealthcheckHTML)
+		reader, _ := prr.ReportReader(rs)
 		fhr := report.FileHandler{Filename: reportPath}
 		_ = fhr.HandleReport(reader)
 	}
 
 	// Email report
 	if emailListPath != "" {
-
+		prr := report.NewPongo2ReportRunnerFromString(healthcheck.TemplateHealthcheckHTML)
 		df, err := report.ReadDistributionFormatYAMLFromFile(emailListPath)
 		if err != nil {
 			log.Fatal("Failed to read distribution format: ", err)
