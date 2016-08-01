@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"testing"
 	"time"
 
@@ -76,4 +77,65 @@ func TestLogLevelingFiltering(t *testing.T) {
 		}
 	}
 
+}
+
+//The following are rhobot CLI test
+
+func TestCLI_Healthchecks(t *testing.T) {
+	//TODO create fail verification test
+
+	args := []string{"rhobot", "healthchecks", "healthcheck/healthchecksTest.yml"}
+	os.Args = args
+	main()
+}
+
+func TestCLI_PG_Healthchecks(t *testing.T) {
+
+	//clear hctest
+	cxn := database.GetPGConnection(conf.DBURI())
+	result, err := cxn.Exec("DROP TABLE IF EXISTS public.hctest")
+	if err != nil {
+		t.Fatalf("error dropping public.hctest\n%s", err)
+	}
+
+	args := []string{"rhobot", "healthchecks", "healthcheck/healthchecksTest.yml",
+		"--hcschema", "public", "--hctable", "hctest"}
+	os.Args = args
+	main()
+
+	//make sure hctest only has 3 rows
+	row, err := cxn.Query("SELECT count(*) FROM public.hctest;")
+	defer row.Close()
+	if err != nil {
+		t.Fatalf("error selecting public.hctest\n%s", err)
+	} else {
+
+		if row.Next() {
+			var count int
+			err = row.Scan(&count)
+
+			if count != 3 {
+				t.Fatal("public.hctest count should have been 3")
+			}
+
+		} else {
+			t.Fatalf("no results in selecting public.hctest\n%s", err)
+		}
+
+	}
+
+	log.Info(result)
+}
+
+func TestCLI(t *testing.T) {
+	//All the following should exit with 0
+
+	os.Args = []string{"rhobot"}
+	main()
+
+	os.Args = []string{"rhobot", "-V"}
+	main()
+
+	os.Args = []string{"healthchecks"}
+	main()
 }
