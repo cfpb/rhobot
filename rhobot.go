@@ -11,8 +11,8 @@ import (
 	"github.com/cfpb/rhobot/gocd"
 	"github.com/cfpb/rhobot/healthcheck"
 	"github.com/cfpb/rhobot/report"
-	"github.com/codegangsta/cli"
 	"github.com/davecgh/go-spew/spew"
+	"github.com/urfave/cli"
 )
 
 func main() {
@@ -70,8 +70,11 @@ func main() {
 	app.Flags = []cli.Flag{logLevelFlag}
 	app.Commands = []cli.Command{
 		{
-			Name:  "healthchecks",
-			Usage: "HEALTHCHECK_FILE [--dburi DATABASE_URI] [--report REPORT_FILE] [--email DISTRIBUTION_FILE]",
+			Name: "healthchecks",
+			Usage: "HEALTHCHECK_FILE " +
+				"[--dburi DATABASE_URI] " +
+				"[--report REPORT_FILE] [--email DISTRIBUTION_FILE]" +
+				"[--hcschema SCHEMA] [--hctable TABLE]",
 			Flags: []cli.Flag{
 				reportFileFlag,
 				dburiFlag,
