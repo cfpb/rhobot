@@ -33,7 +33,7 @@ go_import_path: github.com/cfpb/rhobot
 
 install:
     - go get github.com/Sirupsen/logrus
-    - go get github.com/codegangsta/cli
+    - go get github.com/urfave/cli
     - go get -u github.com/davecgh/go-spew/spew
     - go get github.com/lib/pq
     - go get gopkg.in/yaml.v2
