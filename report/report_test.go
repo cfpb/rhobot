@@ -7,6 +7,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 
 	"github.com/cfpb/rhobot/config"
+	"github.com/cfpb/rhobot/database"
 )
 
 var conf *config.Config
@@ -47,7 +48,6 @@ func TestJSONReport(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error writing report\n%s", err)
 	}
-
 }
 
 func TestJSONReportToFile(t *testing.T) {
@@ -69,7 +69,40 @@ func TestJSONReportToFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error writing report\n%s", err)
 	}
+}
 
+func TestPGReportToDB(t *testing.T) {
+	var re Element
+	var rs Set
+	var prr Runner
+	var pghr Handler
+	cxn := database.GetPGConnection(conf.DBURI())
+
+	re = SimpleRE{[]string{"Something", "Nothing", "Mine", "Yours"}}
+	var templateSimplePostgres = `
+	CREATE TABLE IF NOT EXISTS {{metadata.schema}}.{{metadata.table}}("something" text, "nothing" text, "mine" text, "yours" text);
+	{% for element in elements %}
+	INSERT INTO "{{metadata.schema}}"."{{metadata.table}}" ("something", "nothing", "mine", "yours") VALUES ('{{ element.Something }}', '{{ element.Nothing }}', '{{ element.Mine}}', '{{ element.Yours }}' );
+	{% endfor %}
+	`
+
+	prr = NewPongo2ReportRunnerFromString(templateSimplePostgres)
+	pghr = PGHandler{cxn}
+	//pghr = PrintHandler{}
+
+	elements := []Element{re, re}
+	metadata := map[string]interface{}{
+		"test":   "json",
+		"schema": "public",
+		"table":  "something",
+	}
+	rs = Set{elements, metadata}
+
+	reader, err := prr.ReportReader(rs)
+	err = pghr.HandleReport(reader)
+	if err != nil {
+		t.Fatalf("error writing report\n%s", err)
+	}
 }
 
 func TestPongo2Report(t *testing.T) {
@@ -107,6 +140,5 @@ func TestDistributionList(t *testing.T) {
 		log.Debugf("%d: %s %s = %v\n", i,
 			severityType.Field(i).Name, f.Type(), f.Interface())
 	}
-
 	df.Print()
 }
