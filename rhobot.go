@@ -56,13 +56,13 @@ func main() {
 		Value: "",
 		Usage: "yaml file containing email distribution list",
 	}
-	hcSchemaFlag := cli.StringFlag{
-		Name:  "hcschema",
+	schemaFlag := cli.StringFlag{
+		Name:  "schema",
 		Value: "",
 		Usage: "which schema the healthchecks should be put into",
 	}
-	hcTableFlag := cli.StringFlag{
-		Name:  "hctable",
+	tableFlag := cli.StringFlag{
+		Name:  "table",
 		Value: "",
 		Usage: "which table the healthchecks should be put into",
 	}
@@ -74,13 +74,13 @@ func main() {
 			Usage: "HEALTHCHECK_FILE " +
 				"[--dburi DATABASE_URI] " +
 				"[--report REPORT_FILE] [--email DISTRIBUTION_FILE]" +
-				"[--hcschema SCHEMA] [--hctable TABLE]",
+				"[--schema SCHEMA] [--table TABLE]",
 			Flags: []cli.Flag{
 				reportFileFlag,
 				dburiFlag,
 				emailListFlag,
-				hcSchemaFlag,
-				hcTableFlag,
+				schemaFlag,
+				tableFlag,
 			},
 			Action: func(c *cli.Context) {
 				updateLogLevel(c, conf)
@@ -89,8 +89,8 @@ func main() {
 				var healthcheckPath string
 				var reportPath string
 				var emailListPath string
-				var hcSchema string
-				var hcTable string
+				var schema string
+				var table string
 
 				if c.Args().Get(0) != "" {
 					healthcheckPath = c.Args().Get(0)
@@ -115,13 +115,13 @@ func main() {
 					log.Infof("Emailing report to %v", emailListPath)
 				}
 
-				if c.String("hcschema") != "" && c.String("hctable") != "" {
-					hcSchema = c.String("hcschema")
-					hcTable = c.String("hctable")
-					log.Infof("Saving healthchecks to %v.%v", hcSchema, hcTable)
+				if c.String("schema") != "" && c.String("table") != "" {
+					schema = c.String("schema")
+					table = c.String("table")
+					log.Infof("Saving healthchecks to %v.%v", schema, table)
 				}
 
-				healthcheckRunner(conf, healthcheckPath, reportPath, emailListPath, hcSchema, hcTable)
+				healthcheckRunner(conf, healthcheckPath, reportPath, emailListPath, schema, table)
 				log.Info("Success!")
 			},
 		},
