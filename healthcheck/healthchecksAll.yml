@@ -1,7 +1,4 @@
 name: rhobot healthcheck ALL
-distribution:
-- stefan.fox@cfpb.gov
-- francisco@cfpb.gov
 tests:
 - severity: "debug"
   expected: true

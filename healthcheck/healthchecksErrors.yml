@@ -1,7 +1,4 @@
 name: rhobot healthcheck ERRORS
-distribution:
-- stefan.fox@cfpb.gov
-- francisco@cfpb.gov
 tests:
 - severity: "error"
   expected: false

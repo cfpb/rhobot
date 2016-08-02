@@ -140,13 +140,12 @@ func (healthCheck *SQLHealthCheck) RunHealthCheck(cxn *sql.DB) {
 	answer := ""
 
 	rows, err := cxn.Query(healthCheck.Query)
-
 	if err != nil {
 		log.Error(err)
 		healthCheck.Passed = false
 		healthCheck.Actual = err.Error()
 	} else {
-
+		defer rows.Close()
 		rows.Next()
 		rows.Scan(&answer)
 

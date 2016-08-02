@@ -1,7 +1,4 @@
 name: rhobot healthcheck FATAL
-distribution:
-- stefan.fox@cfpb.gov
-- francisco@cfpb.gov
 tests:
 - severity: "fatal"
   expected: 0

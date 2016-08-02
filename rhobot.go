@@ -11,8 +11,8 @@ import (
 	"github.com/cfpb/rhobot/gocd"
 	"github.com/cfpb/rhobot/healthcheck"
 	"github.com/cfpb/rhobot/report"
-	"github.com/codegangsta/cli"
 	"github.com/davecgh/go-spew/spew"
+	"github.com/urfave/cli"
 )
 
 func main() {
@@ -56,16 +56,31 @@ func main() {
 		Value: "",
 		Usage: "yaml file containing email distribution list",
 	}
+	schemaFlag := cli.StringFlag{
+		Name:  "schema",
+		Value: "",
+		Usage: "which schema the healthchecks should be put into",
+	}
+	tableFlag := cli.StringFlag{
+		Name:  "table",
+		Value: "",
+		Usage: "which table the healthchecks should be put into",
+	}
 
 	app.Flags = []cli.Flag{logLevelFlag}
 	app.Commands = []cli.Command{
 		{
-			Name:  "healthchecks",
-			Usage: "HEALTHCHECK_FILE [--dburi DATABASE_URI] [--report REPORT_FILE] [--email DISTRIBUTION_FILE]",
+			Name: "healthchecks",
+			Usage: "HEALTHCHECK_FILE " +
+				"[--dburi DATABASE_URI] " +
+				"[--report REPORT_FILE] [--email DISTRIBUTION_FILE]" +
+				"[--schema SCHEMA] [--table TABLE]",
 			Flags: []cli.Flag{
 				reportFileFlag,
 				dburiFlag,
 				emailListFlag,
+				schemaFlag,
+				tableFlag,
 			},
 			Action: func(c *cli.Context) {
 				updateLogLevel(c, conf)
@@ -74,6 +89,8 @@ func main() {
 				var healthcheckPath string
 				var reportPath string
 				var emailListPath string
+				var schema string
+				var table string
 
 				if c.Args().Get(0) != "" {
 					healthcheckPath = c.Args().Get(0)
@@ -90,15 +107,21 @@ func main() {
 
 				if c.String("report") != "" {
 					reportPath = c.String("report")
-					log.Debugf("Generating report at %v", reportPath)
+					log.Infof("Generating report at %v", reportPath)
 				}
 
 				if c.String("email") != "" {
 					emailListPath = c.String("email")
-					log.Debugf("Emailing report to %v", emailListPath)
+					log.Infof("Emailing report to %v", emailListPath)
 				}
 
-				healthcheckRunner(conf, healthcheckPath, reportPath, emailListPath)
+				if c.String("schema") != "" && c.String("table") != "" {
+					schema = c.String("schema")
+					table = c.String("table")
+					log.Infof("Saving healthchecks to %v.%v", schema, table)
+				}
+
+				healthcheckRunner(conf, healthcheckPath, reportPath, emailListPath, schema, table)
 				log.Info("Success!")
 			},
 		},
@@ -195,7 +218,7 @@ func updateGOCDHost(c *cli.Context, config *config.Config, gocdServer *gocd.Serv
 	gocdServer = gocd.NewServerConfig(config.GOCDHost, config.GOCDPort, config.GOCDUser, config.GOCDPassword, config.GOCDTimeout)
 }
 
-func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath string, emailListPath string) {
+func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath string, emailListPath string, hcSchema string, hcTable string) {
 	healthChecks, err := healthcheck.ReadHealthCheckYAMLFromFile(healthcheckPath)
 	if err != nil {
 		log.Fatal("Failed to read healthchecks: ", err)
@@ -224,23 +247,27 @@ func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath
 		"name":      healthChecks.Name,
 		"db_name":   config.PgDatabase,
 		"footer":    healthcheck.FooterHealthcheck,
-		"timestamp": time.Now().UTC().String(),
+		"timestamp": time.Now().Format(time.ANSIC),
 		"status":    healthcheck.StatusHealthchecks(numErrors, fatal),
+		"schema":    hcSchema,
+		"table":     hcTable,
 	}
-
-	prr := report.NewPongo2ReportRunnerFromString(healthcheck.TemplateHealthcheck)
 	rs := report.Set{Elements: elements, Metadata: metadata}
-	reader, _ := prr.ReportReader(rs)
 
 	// Write report to file
 	if reportPath != "" {
+		prr := report.NewPongo2ReportRunnerFromString(healthcheck.TemplateHealthcheckHTML)
+		reader, _ := prr.ReportReader(rs)
 		fhr := report.FileHandler{Filename: reportPath}
-		_ = fhr.HandleReport(reader)
+		err = fhr.HandleReport(reader)
+		if err != nil {
+			log.Error("error writing report to PG database: ", err)
+		}
 	}
 
 	// Email report
 	if emailListPath != "" {
-
+		prr := report.NewPongo2ReportRunnerFromString(healthcheck.TemplateHealthcheckHTML)
 		df, err := report.ReadDistributionFormatYAMLFromFile(emailListPath)
 		if err != nil {
 			log.Fatal("Failed to read distribution format: ", err)
@@ -267,9 +294,19 @@ func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath
 				}
 				err = ehr.HandleReport(reader)
 				if err != nil {
-					log.Warn("Failed to email report: ", err)
+					log.Error("Failed to email report: ", err)
 				}
 			}
+		}
+	}
+
+	if hcSchema != "" && hcTable != "" {
+		prr := report.NewPongo2ReportRunnerFromString(healthcheck.TemplateHealthcheckPostgres)
+		pgr := report.PGHandler{Cxn: cxn}
+		reader, err := prr.ReportReader(rs)
+		err = pgr.HandleReport(reader)
+		if err != nil {
+			log.Errorf("Failed to save healthchecks to PG database\n%s", err)
 		}
 	}
 

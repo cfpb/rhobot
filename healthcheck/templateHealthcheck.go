@@ -6,8 +6,27 @@ import (
 	"strings"
 )
 
-// TemplateHealthcheck pongo2 template for healthchecks
-const TemplateHealthcheck = `
+// TemplateHealthcheckPostgres pongo2 template for healthchecks INSERT
+const TemplateHealthcheckPostgres = `
+CREATE TABLE IF NOT EXISTS {{metadata.schema}}.{{metadata.table}}
+(
+  title text,
+  query text,
+  executed text,
+  expected text,
+  actual text,
+  severity text,
+  "timestamp" timestamp with time zone
+);
+
+INSERT INTO "{{metadata.schema}}"."{{metadata.table}}" ("title", "query", "executed", "expected", "actual", "severity", "timestamp") VALUES
+{% for element in elements %}
+('{{ element.Title }}', '{{ element.Query | safe  }}', '{{ element.Passed}}', '{{ element.Expected }}', '{{ element.Actual }}', '{{ element.Severity }}', '{{ metadata.timestamp }}') ` +
+	`{% if forloop.Last%};{%else%},{%endif%}` +
+	`{% endfor %}`
+
+// TemplateHealthcheckHTML pongo2 template for healthchecks
+const TemplateHealthcheckHTML = `
 	<h2>{{ metadata.status }}</h2>
   <h2>{{ metadata.name }} - Running against database "{{ metadata.db_name }}"</h2>
     <table border=1 frame=void rules=rows>

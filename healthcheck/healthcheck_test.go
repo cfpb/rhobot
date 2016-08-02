@@ -182,7 +182,7 @@ func TestHealthcheckPongo2Report(t *testing.T) {
 
 	rePass = SQLHealthCheck{"true", "select (select count(1) from information_schema.tables) > 0;", "basic test", "FATAL", true, "t", true}
 	reFail = SQLHealthCheck{"true", "select (select count(1) from information_schema.tables) < 0;", "basic test", "FATAL", false, "f", true}
-	prr = report.NewPongo2ReportRunnerFromString(TemplateHealthcheck)
+	prr = report.NewPongo2ReportRunnerFromString(TemplateHealthcheckHTML)
 	phr = report.PrintHandler{}
 
 	elements := []report.Element{rePass, reFail}
