@@ -3,6 +3,7 @@ package report
 import (
 	"bufio"
 	"crypto/tls"
+	"database/sql"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -112,4 +113,30 @@ func (eh EmailHandler) HandleReport(reader io.Reader) (err error) {
 	}
 
 	return err
+}
+
+// PGHandler initilization with sql connection
+type PGHandler struct {
+	Cxn *sql.DB
+}
+
+// HandleReport consumes ReportReader output, writes to postgres db
+func (pg PGHandler) HandleReport(reader io.Reader) (err error) {
+
+	reportBytes, err := ioutil.ReadAll(reader)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	reportString := string(reportBytes)
+	result, err := pg.Cxn.Exec(reportString)
+	if err != nil {
+		log.Error("query failed: ", err)
+	} else {
+		rows, _ := result.RowsAffected()
+		log.Info(rows, " Row(s) Affected")
+
+	}
+
+	return
 }

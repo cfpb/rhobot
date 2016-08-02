@@ -1,10 +1,13 @@
 name: rhobot healthcheck INVALID
 tests:
-- severity: "error"
-  expected: false
-  title: "basic test 6 (should be invalid)"
+- expected: false
+  title: "missing severity"
   query: "select (select count(1) from InvalidSchema.Tables) > 0;"
 - severity: "warn"
   expected: true
-  title: "should be able to see this healtcheck"
+  title: "mispelled query"
+  qury: "select (select count(1) from information_schema.tables) > 0;"
+- severity: "warn"
+  expected: true
+  title: "This should be seen"
   query: "select (select count(1) from information_schema.tables) > 0;"

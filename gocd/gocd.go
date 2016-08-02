@@ -7,6 +7,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"path/filepath"
+	"reflect"
+	"strconv"
+	"strings"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -86,11 +90,11 @@ type Server struct {
 	Port     string
 	User     string
 	Password string
+	Timeout  time.Duration
 }
 
 // client returns a http client with longer timeout and skip verify
-func client() *http.Client {
-	timeout := time.Duration(120 * time.Second)
+func client(timeout time.Duration) *http.Client {
 	transCfg := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
@@ -101,12 +105,23 @@ func client() *http.Client {
 }
 
 // NewServerConfig Create a Server object from a config
-func NewServerConfig(host string, port string, user string, password string) *Server {
+func NewServerConfig(host string, port string, user string, password string, timeoutStr string) *Server {
+
+	// timeout casting to seconds
+	timeout := time.Duration(120 * time.Second)
+	i, err := strconv.Atoi(timeoutStr)
+	if err == nil {
+		timeout = time.Duration(i) * time.Second
+	} else {
+		log.Warn("Failed to convert timeout to seconds: ", err)
+	}
+
 	return &Server{
 		Host:     host,
 		Port:     port,
 		User:     user,
 		Password: password,
+		Timeout:  timeout,
 	}
 }
 
@@ -141,13 +156,15 @@ func (server Server) pipelineConfigPUT(pipeline Pipeline, etag string) (pipeline
 		return
 	}
 
-	req.SetBasicAuth(server.User, server.Password)
+	if len(server.User) > 0 && len(server.Password) > 0 {
+		req.SetBasicAuth(server.User, server.Password)
+	}
 	req.Header.Set("Accept", "application/vnd.go.cd.v1+json")
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("If-Match", etag)
 
 	log.Debugf("Sending request: %v", req)
-	resp, err := client().Do(req)
+	resp, err := client(server.Timeout).Do(req)
 	if err != nil {
 		return
 	}
@@ -188,12 +205,14 @@ func (server Server) pipelineConfigPOST(pipelineConfig PipelineConfig) (pipeline
 		return
 	}
 
-	req.SetBasicAuth(server.User, server.Password)
+	if len(server.User) > 0 && len(server.Password) > 0 {
+		req.SetBasicAuth(server.User, server.Password)
+	}
 	req.Header.Set("Accept", "application/vnd.go.cd.v1+json")
 	req.Header.Set("Content-Type", "application/json")
 
 	log.Debugf("Sending request: %v", req)
-	resp, err := client().Do(req)
+	resp, err := client(server.Timeout).Do(req)
 	if err != nil {
 		return
 	}
@@ -227,12 +246,14 @@ func (server Server) pipelineGET(pipelineName string) (pipeline Pipeline, etag s
 		return
 	}
 
-	req.SetBasicAuth(server.User, server.Password)
+	if len(server.User) > 0 && len(server.Password) > 0 {
+		req.SetBasicAuth(server.User, server.Password)
+	}
 	req.Header.Set("Accept", "application/vnd.go.cd.v1+json")
 	req.Header.Set("Content-Type", "application/json")
 
 	log.Debugf("Sending request: %v", req)
-	resp, err := client().Do(req)
+	resp, err := client(server.Timeout).Do(req)
 	if err != nil {
 		return
 	}
@@ -263,51 +284,87 @@ func (server Server) pipelineGET(pipelineName string) (pipeline Pipeline, etag s
 
 // Push takes a pipeline from a file and sends it to GoCD
 func Push(server *Server, path string, group string) (err error) {
-	pipeline, err := readPipelineJSONFromFile(path)
+	localPipeline, err := readPipelineJSONFromFile(path)
 	if err != nil {
 		return
 	}
 
-	etag, err := Exist(server, pipeline.Name)
+	etag, remotePipeline, err := Exist(server, localPipeline.Name)
 	if err != nil {
 		log.Info(err)
 	}
 
+	Compare(localPipeline, remotePipeline, path)
+
 	if etag == "" {
-		pipelineConfig := PipelineConfig{group, pipeline}
+		pipelineConfig := PipelineConfig{group, localPipeline}
 		_, err = server.pipelineConfigPOST(pipelineConfig)
 	} else {
-		_, err = server.pipelineConfigPUT(pipeline, etag)
+		_, err = server.pipelineConfigPUT(localPipeline, etag)
 	}
 	return
 }
 
 // Pull reads pipeline from a file, finds it on GoCD, and updates the file
 func Pull(server *Server, path string) (err error) {
-	pipeline, err := readPipelineJSONFromFile(path)
+	localPipeline, err := readPipelineJSONFromFile(path)
 	if err != nil {
 		return
 	}
 
-	name := pipeline.Name
-	err = Clone(server, path, name)
+	name := localPipeline.Name
+	remotePipeline, err := Clone(server, path, name)
+
+	Compare(localPipeline, remotePipeline, path)
+
 	return
 }
 
 // Exist checks if a pipeline of a given name exist, returns it's etag or an empty string
-func Exist(server *Server, name string) (etag string, err error) {
-	_, etag, err = server.pipelineGET(name)
+func Exist(server *Server, name string) (etag string, pipeline Pipeline, err error) {
+	pipeline, etag, err = server.pipelineGET(name)
 	return
 }
 
 // Clone finds a pipeline by name on GoCD and saves it to a file
-func Clone(server *Server, path string, name string) (err error) {
-	pipelineFetched, _, err := server.pipelineGET(name)
+func Clone(server *Server, path string, name string) (pipeline Pipeline, err error) {
+	pipeline, _, err = server.pipelineGET(name)
 	if err != nil {
 		return
 	}
 
-	pipelineJSON, _ := json.MarshalIndent(pipelineFetched, "", "    ")
+	err = writePipeline(path, pipeline)
+	return
+}
+
+// Compare saves copies of the local and remote pipeline if different
+func Compare(localPipeline Pipeline, remotePipeline Pipeline, path string) {
+
+	if !reflect.DeepEqual(localPipeline, remotePipeline) {
+		log.Warn("Local and Remote are different")
+
+		filepath := strings.TrimSuffix(path, filepath.Ext(path))
+		localBakPath := filepath + ".local.bak.json"
+		remoteBakPath := filepath + ".remote.bak.json"
+
+		log.Info("Saving Local Backup: ", localBakPath)
+		errLocal := writePipeline(localBakPath, localPipeline)
+		log.Info("Saving Remote Backup: ", remoteBakPath)
+		errRemote := writePipeline(remoteBakPath, remotePipeline)
+
+		if errLocal != nil {
+			log.Warn("Error while writing backup for local pipeline: ", errLocal)
+		}
+		if errRemote != nil {
+			log.Warn("Error while writing backup for local pipeline: ", errLocal)
+		}
+
+	}
+}
+
+// writePipeline helper function to write a pipeline to file
+func writePipeline(path string, pipeline Pipeline) (err error) {
+	pipelineJSON, _ := json.MarshalIndent(pipeline, "", "    ")
 	err = ioutil.WriteFile(path, pipelineJSON, 0666)
 	return
 }

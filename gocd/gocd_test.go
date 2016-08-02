@@ -21,7 +21,11 @@ func init() {
 	conf = config.NewConfig()
 	conf.SetLogLevel("info")
 
-	server = NewServerConfig(conf.GOCDHost, conf.GOCDPort, conf.GOCDUser, conf.GOCDPassword)
+	// use no authentication for test
+	conf.GOCDUser = ""
+	conf.GOCDPassword = ""
+
+	server = NewServerConfig(conf.GOCDHost, conf.GOCDPort, conf.GOCDUser, conf.GOCDPassword, conf.GOCDTimeout)
 
 	buf := bytes.NewBuffer(nil)
 	f, _ := os.Open("./test.json")
@@ -60,7 +64,7 @@ func TestUnmarshalFidelityLoss(t *testing.T) {
 }
 
 func TestGocdPOST(t *testing.T) {
-	etag, err := Exist(server, "test")
+	etag, _, err := Exist(server, "test")
 	if err == nil && etag != "" {
 		log.Info("Cannot run TestGoCDPOST, 'test' pipeline already exists.")
 		t.SkipNow()
@@ -83,7 +87,7 @@ func TestGocdGET(t *testing.T) {
 }
 
 func TestExist(t *testing.T) {
-	etag, err := Exist(server, "test")
+	etag, _, err := Exist(server, "test")
 
 	if err != nil {
 		t.Error(err)
@@ -135,4 +139,33 @@ func TestGocdPUT(t *testing.T) {
 	if strangeEnvVarA != strangeEnvVarC {
 		t.Error("STRANGE environment variable was not reset")
 	}
+}
+
+func TestGocdTimeout(t *testing.T) {
+
+	serverA := NewServerConfig(conf.GOCDHost, conf.GOCDPort, conf.GOCDUser, conf.GOCDPassword, "120")
+	serverB := &Server{
+		Host:     serverA.Host,
+		Port:     serverA.Port,
+		User:     serverA.User,
+		Password: serverA.Password,
+		Timeout:  time.Duration(1), //1ns
+	}
+
+	etag, _, err := Exist(serverA, "test")
+	if etag == "" {
+		t.Error("test does not exist as a gocd pipeline")
+	}
+	if err != nil {
+		t.Error("threw an error but should not have", err)
+	}
+
+	etag, _, err = Exist(serverB, "test")
+	if etag != "" {
+		t.Error("got an etag but should not have", etag)
+	}
+	if err == nil {
+		t.Error("did not Timeout but should have", err)
+	}
+
 }

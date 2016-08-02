@@ -1,0 +1,9 @@
+db:
+  image: postgres
+  ports:
+    - "5432"
+
+gocd:
+  image: gocd/gocd-server
+  ports:
+    - "8153:8153"
