@@ -1,7 +1,4 @@
 name: rhobot healthcheck INVALID
-distribution:
-- stefan.fox@cfpb.gov
-- francisco@cfpb.gov
 tests:
 - expected: false
   title: "missing severity"
