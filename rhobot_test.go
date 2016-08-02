@@ -99,7 +99,7 @@ func TestCLI_PG_Healthchecks(t *testing.T) {
 	}
 
 	args := []string{"rhobot", "healthchecks", "healthcheck/healthchecksTest.yml",
-		"--hcschema", "public", "--hctable", "hctest"}
+		"--schema", "public", "--table", "hctest"}
 	os.Args = args
 	main()
 
