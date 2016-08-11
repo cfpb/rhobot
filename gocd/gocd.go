@@ -30,9 +30,10 @@ type Pipeline struct {
 	Template              interface{}   `json:"template"`
 	Parameters            []interface{} `json:"parameters"`
 	EnvironmentVariables  []struct {
-		Secure bool   `json:"secure"`
-		Name   string `json:"name"`
-		Value  string `json:"value"`
+		Secure         bool   `json:"secure"`
+		Name           string `json:"name"`
+		Value          string `json:"value"`
+		EncryptedValue string `json:"encrypted_value"`
 	} `json:"environment_variables"`
 	Materials []struct {
 		Type       string `json:"type"`
