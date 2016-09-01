@@ -22,20 +22,23 @@ type PipelineConfig struct {
 	Pipeline Pipeline `json:"pipeline"`
 }
 
+// EnvironmentVariables a GoCD structure for an environment variable
+type EnvironmentVariables struct {
+	Secure         bool   `json:"secure"`
+	Name           string `json:"name"`
+	Value          string `json:"value,omitempty"`
+	EncryptedValue string `json:"encrypted_value,omitempty"`
+}
+
 // Pipeline a GoCD structure that represents a pipeline
 type Pipeline struct {
-	LabelTemplate         string        `json:"label_template"`
-	EnablePipelineLocking bool          `json:"enable_pipeline_locking"`
-	Name                  string        `json:"name"`
-	Template              interface{}   `json:"template"`
-	Parameters            []interface{} `json:"parameters"`
-	EnvironmentVariables  []struct {
-		Secure         bool   `json:"secure"`
-		Name           string `json:"name"`
-		Value          string `json:"value,omitempty"`
-		EncryptedValue string `json:"encrypted_value,omitempty"`
-	} `json:"environment_variables"`
-	Materials []struct {
+	LabelTemplate         string                 `json:"label_template"`
+	EnablePipelineLocking bool                   `json:"enable_pipeline_locking"`
+	Name                  string                 `json:"name"`
+	Template              interface{}            `json:"template"`
+	Parameters            []interface{}          `json:"parameters"`
+	EnvironmentVariables  []EnvironmentVariables `json:"environment_variables"`
+	Materials             []struct {
 		Type       string `json:"type"`
 		Attributes struct {
 			URL             string      `json:"url"`
@@ -59,7 +62,7 @@ type Pipeline struct {
 				Users []interface{} `json:"users"`
 			} `json:"authorization"`
 		} `json:"approval"`
-		EnvironmentVariables []interface{} `json:"environment_variables"`
+		EnvironmentVariables []EnvironmentVariables `json:"environment_variables"`
 		Jobs                 []struct {
 			Name                 string        `json:"name"`
 			RunInstanceCount     interface{}   `json:"run_instance_count"`
