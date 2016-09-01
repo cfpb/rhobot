@@ -46,7 +46,7 @@ func NewDefaultConfig() *Config {
 		PgDatabase:   "postgres",
 		PgUser:       "postgres",
 		PgPassword:   "password",
-		PgSSLMode:    "allow",
+		PgSSLMode:    "disable",
 		GOCDHost:     "http://localhost",
 		GOCDPort:     "8153",
 		GOCDUser:     "",
