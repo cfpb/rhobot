@@ -10,6 +10,10 @@ import (
 	"github.com/flosch/pongo2"
 )
 
+func init() {
+	pongo2.RegisterFilter("addquote", filterAddquote)
+}
+
 // JSONReportRunner initilization should contain any variables used for report
 type JSONReportRunner struct{}
 
@@ -26,7 +30,6 @@ func (jrr JSONReportRunner) ReportReader(reportSet Set) (io.Reader, error) {
 
 // NewPongo2ReportRunnerFromFile constructor with template file
 func NewPongo2ReportRunnerFromFile(TemplateFilePath string) *Pongo2ReportRunner {
-	pongo2.RegisterFilter("addquote", filterAddquote)
 	var template = pongo2.Must(pongo2.FromFile(TemplateFilePath))
 	return &Pongo2ReportRunner{
 		Template: *template,
