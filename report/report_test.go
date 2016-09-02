@@ -126,6 +126,39 @@ func TestPongo2Report(t *testing.T) {
 	}
 }
 
+func TestMultiplePongoReports(t *testing.T) {
+	var re Element
+	var rs Set
+	var prr Runner
+	var prr2 Runner
+	var phr Handler
+	var phr2 Handler
+
+	re = SimpleRE{[]string{"Some", "Thing"}}
+	prr = NewPongo2ReportRunnerFromString(TemplateSimple)
+	prr2 = NewPongo2ReportRunnerFromString(TemplateSimple)
+	phr = PrintHandler{}
+	phr2 = FileHandler{
+		Filename: "pongoReport.html",
+	}
+
+	elements := []Element{re, re}
+	metadata := map[string]interface{}{"test": "pongo2"}
+	rs = Set{elements, metadata}
+
+	reader, err := prr.ReportReader(rs)
+	err = phr.HandleReport(reader)
+	if err != nil {
+		t.Fatalf("error printing report\n%s", err)
+	}
+
+	reader, err = prr2.ReportReader(rs)
+	err = phr2.HandleReport(reader)
+	if err != nil {
+		t.Fatalf("error writing report\n%s", err)
+	}
+}
+
 func TestDistributionList(t *testing.T) {
 	df, err := ReadDistributionFormatYAMLFromFile("distributionListTest.yml")
 	if err != nil {
