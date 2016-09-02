@@ -35,7 +35,6 @@ func NewPongo2ReportRunnerFromFile(TemplateFilePath string) *Pongo2ReportRunner 
 
 // NewPongo2ReportRunnerFromString constructor with template string
 func NewPongo2ReportRunnerFromString(TemplateString string) *Pongo2ReportRunner {
-	pongo2.RegisterFilter("addquote", filterAddquote)
 	var template = pongo2.Must(pongo2.FromString(TemplateString))
 	return &Pongo2ReportRunner{
 		Template: *template,
