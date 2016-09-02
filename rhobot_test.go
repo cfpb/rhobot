@@ -16,12 +16,37 @@ var conf *config.Config
 
 func init() {
 	conf = config.NewConfig()
-	conf.SetLogLevel("info")
+	conf.SetLogLevel("debug")
 }
 
 func TestPostgresHealthCheckReporting(t *testing.T) {
 	cxn := database.GetPGConnection(conf.DBURI())
 	healthChecks, _ := healthcheck.ReadHealthCheckYAMLFromFile("healthcheck/healthchecksAll.yml")
+	results, _ := healthChecks.PreformHealthChecks(cxn)
+	var elements []report.Element
+	for _, val := range results {
+		elements = append(elements, val)
+	}
+	metadata := map[string]interface{}{
+		"name":      healthChecks.Name,
+		"schema":    "public",
+		"table":     "healthchecks",
+		"timestamp": time.Now().Format(time.ANSIC),
+	}
+	rs := report.Set{Elements: elements, Metadata: metadata}
+
+	prr := report.NewPongo2ReportRunnerFromString(healthcheck.TemplateHealthcheckPostgres)
+	pgr := report.PGHandler{Cxn: cxn}
+	reader, err := prr.ReportReader(rs)
+	err = pgr.HandleReport(reader)
+	if err != nil {
+		t.Fatalf("error writing report to PG database\n%s", err)
+	}
+}
+
+func TestPostgresHealthCheckEscape(t *testing.T) {
+	cxn := database.GetPGConnection(conf.DBURI())
+	healthChecks, _ := healthcheck.ReadHealthCheckYAMLFromFile("healthcheck/healthchecksEscape.yml")
 	results, _ := healthChecks.PreformHealthChecks(cxn)
 	var elements []report.Element
 	for _, val := range results {

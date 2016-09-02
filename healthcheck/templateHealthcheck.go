@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS {{metadata.schema}}.{{metadata.table}}
 
 INSERT INTO "{{metadata.schema}}"."{{metadata.table}}" ("title", "query", "executed", "expected", "actual", "severity", "timestamp") VALUES
 {% for element in elements %}
-('{{ element.Title }}', '{{ element.Query | safe  }}', '{{ element.Passed}}', '{{ element.Expected }}', '{{ element.Actual }}', '{{ element.Severity }}', '{{ metadata.timestamp }}') ` +
+('{{ element.Title }}', '{{ element.Query | safe | addquote }}', '{{ element.Passed}}', '{{ element.Expected  | safe | addquote  }}', '{{ element.Actual  | safe | addquote  }}', '{{ element.Severity }}', '{{ metadata.timestamp }}') ` +
 	`{% if forloop.Last%};{%else%},{%endif%}` +
 	`{% endfor %}`
 

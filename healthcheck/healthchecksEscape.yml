@@ -1,0 +1,22 @@
+name: rhobot healthcheck ESCAPE
+tests:
+-
+  title: 'Test with single quotes'
+  query: 'SELECT COUNT(*) FROM information_schema.tables where table_name = ''schemata'';'
+  expected: '1'
+  severity: "error"
+-
+  title: 'Test with double quotes'
+  query: "SELECT COUNT(*) FROM information_schema.tables where table_name = 'schemata';"
+  expected: '1'
+  severity: "error"
+-
+  title: 'Test with no semicolon'
+  query: "SELECT COUNT(*) FROM information_schema.tables where table_name = 'schemata'"
+  expected: '1'
+  severity: "error"
+-
+  title: 'Test with no quoted response'
+  query: "SELECT table_name FROM information_schema.tables where table_name = 'schemata'"
+  expected: 'schemata'
+  severity: "error"

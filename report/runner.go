@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"strings"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/flosch/pongo2"
@@ -25,6 +26,7 @@ func (jrr JSONReportRunner) ReportReader(reportSet Set) (io.Reader, error) {
 
 // NewPongo2ReportRunnerFromFile constructor with template file
 func NewPongo2ReportRunnerFromFile(TemplateFilePath string) *Pongo2ReportRunner {
+	pongo2.RegisterFilter("addquote", filterAddquote)
 	var template = pongo2.Must(pongo2.FromFile(TemplateFilePath))
 	return &Pongo2ReportRunner{
 		Template: *template,
@@ -33,6 +35,7 @@ func NewPongo2ReportRunnerFromFile(TemplateFilePath string) *Pongo2ReportRunner 
 
 // NewPongo2ReportRunnerFromString constructor with template string
 func NewPongo2ReportRunnerFromString(TemplateString string) *Pongo2ReportRunner {
+	pongo2.RegisterFilter("addquote", filterAddquote)
 	var template = pongo2.Must(pongo2.FromString(TemplateString))
 	return &Pongo2ReportRunner{
 		Template: *template,
@@ -53,4 +56,10 @@ func (p2rr Pongo2ReportRunner) ReportReader(reportSet Set) (io.Reader, error) {
 	r := bytes.NewReader(reportBytes)
 	log.Debug(string(reportBytes))
 	return r, err
+}
+
+// filterAddquote pongo2 filter for adding an extra quote
+func filterAddquote(in *pongo2.Value, param *pongo2.Value) (*pongo2.Value, *pongo2.Error) {
+	output := strings.Replace(in.String(), "'", "''", -1)
+	return pongo2.AsValue(output), nil
 }
