@@ -19,7 +19,7 @@ var server *Server
 
 func init() {
 	conf = config.NewConfig()
-	conf.SetLogLevel("info")
+	conf.SetLogLevel("debug")
 
 	// use no authentication for test
 	conf.GOCDUser = ""
@@ -86,6 +86,33 @@ func TestGocdGET(t *testing.T) {
 	}
 }
 
+// //Test require a pipeline to have a history
+// func TestGocdHistoryGET(t *testing.T) {
+// 	counterMap, err := server.historyGET("test")
+// 	spew.Dump(counterMap)
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
+// }
+//
+// //Test require a pipeline to have a history
+// func TestGocdArtifactGET(t *testing.T) {
+// 	runsIDMap, err := server.historyGET("test")
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
+//
+// 	artifactBuffer, err := server.artifactGET(
+// 		"test", runsIDMap["p_test"],
+// 		"hello", runsIDMap["s_hello"],
+// 		"world", "cruise-output/console.log")
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
+//
+// 	artifactBuffer.WriteTo(os.Stdout)
+// }
+
 func TestExist(t *testing.T) {
 	etag, _, err := Exist(server, "test")
 
@@ -126,7 +153,7 @@ func TestGocdPUT(t *testing.T) {
 	pipeline.EnvironmentVariables[strangeIndex].Value = strangeEnvVarA.Value
 	pipeline, _ = server.pipelineConfigPUT(pipeline, etag)
 
-	pipeline, etag, _ = server.pipelineGET("test")
+	pipeline, _, _ = server.pipelineGET("test")
 	strangeEnvVarC := pipeline.EnvironmentVariables[strangeIndex]
 	log.Debugf("STRANGE VALUE A: %+v\n", strangeEnvVarA)
 	log.Debugf("STRANGE VALUE B: %+v\n", strangeEnvVarB)
