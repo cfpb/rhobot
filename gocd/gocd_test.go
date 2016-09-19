@@ -11,7 +11,6 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/cfpb/rhobot/config"
-	"github.com/davecgh/go-spew/spew"
 )
 
 var gocdPipelineConfig []byte
@@ -87,33 +86,33 @@ func TestGocdGET(t *testing.T) {
 	}
 }
 
-//Test require a pipeline to have a history
-func TestGocdHistoryGET(t *testing.T) {
-	counterMap, err := History(server, "test")
-	spew.Dump(counterMap)
-	if err != nil {
-		t.Error(err)
-	}
-}
-
-//Test require a pipeline to have a history
-func TestGocdArtifactGET(t *testing.T) {
-	runsIDMap, err := History(server, "test")
-	if err != nil {
-		t.Error(err)
-	}
-
-	artifactBuffer, err := Artifact(
-		server,
-		"test", runsIDMap["p_test"],
-		"hello", runsIDMap["s_hello"],
-		"world", "cruise-output/console.log")
-	if err != nil {
-		t.Error(err)
-	}
-
-	artifactBuffer.WriteTo(os.Stdout)
-}
+// //Test require a pipeline to have a history
+// func TestGocdHistoryGET(t *testing.T) {
+// 	counterMap, err := History(server, "test")
+// 	spew.Dump(counterMap)
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
+// }
+//
+// //Test require a pipeline to have a history
+// func TestGocdArtifactGET(t *testing.T) {
+// 	runsIDMap, err := History(server, "test")
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
+//
+// 	artifactBuffer, err := Artifact(
+// 		server,
+// 		"test", runsIDMap["p_test"],
+// 		"hello", runsIDMap["s_hello"],
+// 		"world", "cruise-output/console.log")
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
+//
+// 	artifactBuffer.WriteTo(os.Stdout)
+// }
 
 func TestExist(t *testing.T) {
 	etag, _, err := Exist(server, "test")
