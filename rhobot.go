@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -66,6 +67,26 @@ func main() {
 		Value: "",
 		Usage: "which table the healthchecks should be put into",
 	}
+	pipelineRunFlag := cli.StringFlag{
+		Name:  "pipeline-run",
+		Value: "0",
+		Usage: "which run of the pipeline history",
+	}
+	stageRunFlag := cli.StringFlag{
+		Name:  "stage-run",
+		Value: "0",
+		Usage: "which run of the stage history",
+	}
+	artifactPathFlag := cli.StringFlag{
+		Name:  "artifact-path",
+		Value: "cruise-output/console.log",
+		Usage: "which artifact to get",
+	}
+	artifactSavePathFlag := cli.StringFlag{
+		Name:  "save",
+		Value: "",
+		Usage: "which run of the stage history",
+	}
 
 	app.Flags = []cli.Flag{logLevelFlag}
 	app.Commands = []cli.Command{
@@ -126,6 +147,65 @@ func main() {
 			},
 		},
 		{
+			Name: "artifacts",
+			Usage: "PIPELINE STAGE JOB" +
+				"[--pipeline-run PIPELINE_RUN] [--stage-run STAGE_RUN] " +
+				"[--artifact-path ARTIFACT_PATH] [--save SAVE_PATH]",
+			Flags: []cli.Flag{
+				pipelineRunFlag,
+				stageRunFlag,
+				artifactPathFlag,
+				artifactSavePathFlag,
+			},
+			Action: func(c *cli.Context) {
+				updateLogLevel(c, conf)
+				gocdServer = updateGOCDHost(c, conf)
+
+				// variables to be populated by cli args
+				var pipeline string
+				var stage string
+				var job string
+
+				//optional cli flags
+				var pipelineRun string
+				var stageRun string
+				var artifactPath string
+				var artifactSavePath string
+
+				if c.Args().Get(0) != "" && c.Args().Get(1) != "" && c.Args().Get(2) != "" {
+					pipeline = c.Args().Get(0)
+					stage = c.Args().Get(1)
+					job = c.Args().Get(2)
+				} else {
+					log.Error("You must provide the PIPELINE STAGE and JOB of the artifact")
+					return
+				}
+
+				if c.String(pipelineRunFlag.GetName()) != "" {
+					pipelineRun = c.String(pipelineRunFlag.GetName())
+					log.Debugf("%v: %v", pipelineRunFlag.GetName(), pipelineRun)
+				}
+
+				if c.String("stage-run") != "" {
+					stageRun = c.String("stage-run")
+					log.Debugf("stage-run %v", stageRun)
+				}
+
+				if c.String("artifact-path") != "" {
+					artifactPath = c.String("artifact-path")
+					log.Debugf("artifact-path %v", artifactPath)
+				}
+
+				if c.String("save") != "" {
+					artifactSavePath = c.String("save")
+					log.Debugf("save %v", artifactSavePath)
+				}
+
+				getArtifact(gocdServer, pipeline, stage, job, pipelineRun, stageRun, artifactPath, artifactSavePath)
+				log.Info("Success!")
+			},
+		},
+		{
 			Name:    "pipeline",
 			Aliases: []string{},
 			Usage:   "Interact with GoCD pipeline",
@@ -138,7 +218,7 @@ func main() {
 					},
 					Action: func(c *cli.Context) {
 						updateLogLevel(c, conf)
-						updateGOCDHost(c, conf, gocdServer)
+						gocdServer = updateGOCDHost(c, conf)
 
 						if len(c.Args()) > 0 {
 							path := c.Args()[0]
@@ -161,7 +241,7 @@ func main() {
 					},
 					Action: func(c *cli.Context) {
 						updateLogLevel(c, conf)
-						updateGOCDHost(c, conf, gocdServer)
+						gocdServer = updateGOCDHost(c, conf)
 
 						if len(c.Args()) > 0 {
 							path := c.Args()[0]
@@ -183,7 +263,7 @@ func main() {
 					},
 					Action: func(c *cli.Context) {
 						updateLogLevel(c, conf)
-						updateGOCDHost(c, conf, gocdServer)
+						gocdServer = updateGOCDHost(c, conf)
 
 						if len(c.Args()) > 1 {
 							name := c.Args()[0]
@@ -211,11 +291,12 @@ func updateLogLevel(c *cli.Context, config *config.Config) {
 	}
 }
 
-func updateGOCDHost(c *cli.Context, config *config.Config, gocdServer *gocd.Server) {
+func updateGOCDHost(c *cli.Context, config *config.Config) (gocdServer *gocd.Server) {
 	if c.String("host") != "" {
 		config.SetGoCDHost(c.String("host"))
 	}
 	gocdServer = gocd.NewServerConfig(config.GOCDHost, config.GOCDPort, config.GOCDUser, config.GOCDPassword, config.GOCDTimeout)
+	return
 }
 
 func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath string, emailListPath string, hcSchema string, hcTable string) {
@@ -314,4 +395,60 @@ func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath
 	if HCerrs != nil {
 		log.Fatal("Healthchecks Failed:\n", spew.Sdump(HCerrs))
 	}
+}
+
+func getArtifact(gocdServer *gocd.Server, pipeline string, stage string, job string,
+	pipelineRun string, stageRun string, artifactPath string, artifactSavePath string) {
+
+	//parse or get latest run numbers for pipeline and stage
+	var pipelineRunNum, stageRunNum int = 0, 0
+	var pipelineOk, stageOk bool = true, true
+	var pipelineErr, stageErr error
+
+	counterMap, err := gocd.History(gocdServer, pipeline)
+	if err != nil {
+		log.Fatalf("Could not find run history for pipeline: %v", pipeline)
+	}
+	log.Debug(spew.Sdump(counterMap))
+
+	if pipelineRun == "0" {
+		pipelineRunNum, pipelineOk = counterMap["p_"+pipeline]
+	} else {
+		pipelineRunNum, pipelineErr = strconv.Atoi(pipelineRun)
+	}
+
+	if stageRun == "0" {
+		stageRunNum, stageOk = counterMap["s_"+stage]
+	} else {
+		stageRunNum, stageErr = strconv.Atoi(stageRun)
+	}
+
+	if !pipelineOk && !stageOk {
+		log.Fatalf("Pipeline: \"%v\" and Stage: \"%v\" not found in pipeline history", pipeline, stage)
+	}
+	if pipelineErr != nil || stageErr != nil {
+		log.Fatalf("Pipeline: %v and Stage: %v could not be parsed to integers", pipelineRun, stageRun)
+	}
+
+	//fetch artifact
+	log.Infof("getting GoCD Artifact - pipeline:%v , pipelineRunNum:%v , stage:%v , stageRunNum:%v , job:%v , artifactPath:%v",
+		pipeline, pipelineRunNum, stage, stageRunNum, job, artifactPath)
+	artifactBuffer, err := gocd.Artifact(gocdServer, pipeline, pipelineRunNum, stage, stageRunNum, job, artifactPath)
+	if err != nil {
+		log.Fatalf("Failed to fetch artifact: %v", artifactPath)
+	}
+
+	//write to file or log
+	if artifactSavePath == "" {
+		artifactBuffer.WriteTo(os.Stdout)
+	} else {
+		f, createErr := os.Create(artifactSavePath)
+		_, writeErr := artifactBuffer.WriteTo(f)
+		defer f.Close()
+
+		if createErr != nil || writeErr != nil {
+			log.Fatalf("Failed to work with file: %v", artifactSavePath)
+		}
+	}
+
 }
