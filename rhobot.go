@@ -442,13 +442,16 @@ func getArtifact(gocdServer *gocd.Server, pipeline string, stage string, job str
 	if artifactSavePath == "" {
 		artifactBuffer.WriteTo(os.Stdout)
 	} else {
-		f, createErr := os.Create(artifactSavePath)
-		_, writeErr := artifactBuffer.WriteTo(f)
-		defer f.Close()
-
-		if createErr != nil || writeErr != nil {
-			log.Fatalf("Failed to work with file: %v", artifactSavePath)
+		f, err := os.Create(artifactSavePath)
+		if err != nil {
+			log.Fatalf("Failed to create file: %v", artifactSavePath)
 		}
+
+		_, err = artifactBuffer.WriteTo(f)
+		if err != nil {
+			log.Fatalf("Failed to write to file: %v", artifactSavePath)
+		}
+		defer f.Close()
 	}
 
 }
