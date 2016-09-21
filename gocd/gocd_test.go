@@ -86,7 +86,13 @@ func TestGocdGET(t *testing.T) {
 	}
 }
 
-// //Test require a pipeline to have a history
+// //The following 2 tests require a pipeline to have a run history
+// //thus is commented out for testing on TravisCI
+// //Future scaffolding will be needed on travis to add an agent,
+// //add the agent and pipeline to an environment,
+// //unpause, and run a pipeline to get a run history
+// //Uncomment for testing on local machine
+//
 // func TestGocdHistoryGET(t *testing.T) {
 // 	counterMap, err := History(server, "test")
 // 	spew.Dump(counterMap)
@@ -95,7 +101,6 @@ func TestGocdGET(t *testing.T) {
 // 	}
 // }
 //
-// //Test require a pipeline to have a history
 // func TestGocdArtifactGET(t *testing.T) {
 // 	runsIDMap, err := History(server, "test")
 // 	if err != nil {
