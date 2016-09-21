@@ -19,7 +19,7 @@ var server *Server
 
 func init() {
 	conf = config.NewConfig()
-	conf.SetLogLevel("info")
+	conf.SetLogLevel("debug")
 
 	// use no authentication for test
 	conf.GOCDUser = ""
@@ -86,6 +86,39 @@ func TestGocdGET(t *testing.T) {
 	}
 }
 
+// //The following 2 tests require a pipeline to have a run history
+// //thus is commented out for testing on TravisCI
+// //Future scaffolding will be needed on travis to add an agent,
+// //add the agent and pipeline to an environment,
+// //unpause, and run a pipeline to get a run history
+// //Uncomment for testing on local machine
+//
+// func TestGocdHistoryGET(t *testing.T) {
+// 	counterMap, err := History(server, "test")
+// 	spew.Dump(counterMap)
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
+// }
+//
+// func TestGocdArtifactGET(t *testing.T) {
+// 	runsIDMap, err := History(server, "test")
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
+//
+// 	artifactBuffer, err := Artifact(
+// 		server,
+// 		"test", runsIDMap["p_test"],
+// 		"hello", runsIDMap["s_hello"],
+// 		"world", "cruise-output/console.log")
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
+//
+// 	artifactBuffer.WriteTo(os.Stdout)
+// }
+
 func TestExist(t *testing.T) {
 	etag, _, err := Exist(server, "test")
 
@@ -126,7 +159,7 @@ func TestGocdPUT(t *testing.T) {
 	pipeline.EnvironmentVariables[strangeIndex].Value = strangeEnvVarA.Value
 	pipeline, _ = server.pipelineConfigPUT(pipeline, etag)
 
-	pipeline, etag, _ = server.pipelineGET("test")
+	pipeline, _, _ = server.pipelineGET("test")
 	strangeEnvVarC := pipeline.EnvironmentVariables[strangeIndex]
 	log.Debugf("STRANGE VALUE A: %+v\n", strangeEnvVarA)
 	log.Debugf("STRANGE VALUE B: %+v\n", strangeEnvVarB)
