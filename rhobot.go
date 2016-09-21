@@ -85,7 +85,7 @@ func main() {
 	artifactSavePathFlag := cli.StringFlag{
 		Name:  "save",
 		Value: "",
-		Usage: "which run of the stage history",
+		Usage: "where to save the fetched artifact",
 	}
 
 	app.Flags = []cli.Flag{logLevelFlag}
