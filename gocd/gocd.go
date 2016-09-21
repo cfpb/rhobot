@@ -134,6 +134,15 @@ func (server Server) URL() string {
 	return fmt.Sprintf("%s:%s", server.Host, server.Port)
 }
 
+func printPrettyJSON(body []byte, objectname string) (prettyJSON bytes.Buffer, err error) {
+	err = json.Indent(&prettyJSON, body, "", "\t")
+	if err != nil {
+		log.Warn("Failed to prettify JSON: ", err)
+	}
+	log.Debug(objectname+" JSON:", string(prettyJSON.Bytes()))
+	return
+}
+
 // readPipelineJSONFromFile reads a GoCD structure from a json file
 func readPipelineJSONFromFile(path string) (pipeline Pipeline, err error) {
 	data, err := ioutil.ReadFile(path)
@@ -184,13 +193,8 @@ func (server Server) pipelineConfigPUT(pipeline Pipeline, etag string) (pipeline
 		return
 	}
 
-	var prettyJSON bytes.Buffer
-	err = json.Indent(&prettyJSON, body, "", "\t")
-	if err != nil {
-		log.Warn("Failed to prettify JSON: ", err)
-	}
+	printPrettyJSON(body, "pipelineConfig")
 
-	log.Debug("pipelineConfig JSON:", string(prettyJSON.Bytes()))
 	err = json.Unmarshal(body, &pipelineResult)
 	return
 }
@@ -232,13 +236,8 @@ func (server Server) pipelineConfigPOST(pipelineConfig PipelineConfig) (pipeline
 		return
 	}
 
-	var prettyJSON bytes.Buffer
-	err = json.Indent(&prettyJSON, body, "", "\t")
-	if err != nil {
-		log.Warn("Failed to prettify JSON: ", err)
-	}
+	printPrettyJSON(body, "pipelineConfig")
 
-	log.Debug("pipelineConfig JSON: ", string(prettyJSON.Bytes()))
 	err = json.Unmarshal(body, &pipeline)
 	return
 }
@@ -273,13 +272,7 @@ func (server Server) pipelineGET(pipelineName string) (pipeline Pipeline, etag s
 		return
 	}
 
-	var prettyJSON bytes.Buffer
-	err = json.Indent(&prettyJSON, body, "", "\t")
-	if err != nil {
-		log.Warn("Failed to prettify JSON: ", err)
-	}
-
-	log.Debug("pipelineConfig JSON:", string(prettyJSON.Bytes()))
+	printPrettyJSON(body, "pipelineConfig")
 
 	etag = resp.Header.Get("ETag")
 	err = json.Unmarshal(body, &pipeline)
@@ -350,12 +343,7 @@ func (server Server) historyGET(pipelineName string) (historyJSON bytes.Buffer, 
 		return
 	}
 
-	err = json.Indent(&historyJSON, body, "", "\t")
-	if err != nil {
-		log.Warn("Failed to prettify JSON: ", err)
-	}
-
-	// log.Debug("pipelineHistory JSON:", string(prettyJSON.Bytes()))
+	historyJSON, err = printPrettyJSON(body, "pipelineHistory")
 	return
 }
 
