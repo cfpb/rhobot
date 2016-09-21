@@ -1,211 +1,75 @@
 {
-    "label_template": "${COUNT}",
-    "enable_pipeline_locking": false,
-    "name": "test",
-    "template": null,
-    "parameters": [],
-    "environment_variables": [
-        {
-            "secure": false,
-            "name": "PGHOST",
-            "value": "PGHOST"
-        },
-        {
-            "secure": false,
-            "name": "PGPORT",
-            "value": "5432"
-        },
-        {
-            "secure": false,
-            "name": "PGDATABASE",
-            "value": "test_development"
-        },
-        {
-            "secure": false,
-            "name": "PGUSER",
-            "value": "PGUSER"
-        },
-        {
-            "secure": false,
-            "name": "PGPASSWORD",
-            "value": "PGPASSWORD"
-        },
-        {
-            "secure": false,
-            "name": "PGSSLMODE",
-            "value": "require"
-        },
-        {
-            "secure": false,
-            "name": "STRANGE",
-            "value": "STRANGE"
+  "label_template": "${COUNT}",
+  "enable_pipeline_locking": false,
+  "name": "test",
+  "template": null,
+  "parameters": [],
+  "environment_variables": [
+    {
+      "secure": false,
+      "name": "STRANGE",
+      "value": "STRANGE"
+    }
+  ],
+  "materials": [
+    {
+      "type": "git",
+      "attributes": {
+        "url": "https://github.com/leereilly/hello-world-java.git",
+        "destination": "project",
+        "filter": null,
+        "name": null,
+        "auto_update": true,
+        "branch": "master",
+        "submodule_folder": null
+      }
+    }
+  ],
+  "stages": [
+    {
+      "name": "hello",
+      "fetch_materials": true,
+      "clean_working_directory": true,
+      "never_cleanup_artifacts": false,
+      "approval": {
+        "type": "success",
+        "authorization": {
+          "roles": [],
+          "users": []
         }
-    ],
-    "materials": [
+      },
+      "environment_variables": [],
+      "jobs": [
         {
-            "type": "git",
-            "attributes": {
-                "url": "https://github.com/cfpb/rhobot-test.git",
-                "destination": "project",
-                "filter": null,
-                "name": null,
-                "auto_update": true,
-                "branch": "master",
-                "submodule_folder": null
+          "name": "world",
+          "run_instance_count": null,
+          "timeout": null,
+          "environment_variables": [],
+          "resources": [],
+          "tasks": [
+            {
+              "type": "exec",
+              "attributes": {
+                "run_if": [
+                  "passed"
+                ],
+                "on_cancel": null,
+                "command": "javac",
+                "arguments": [
+                  "-g",
+                  "HelloWorld.java"
+                ],
+                "working_directory": "project"
+              }
             }
-        },
-        {
-            "type": "git",
-            "attributes": {
-                "url": "https://github.com/cfpb/common-templates-test.git",
-                "destination": "common-templates",
-                "filter": null,
-                "name": null,
-                "auto_update": true,
-                "branch": "master",
-                "submodule_folder": null
-            }
+          ],
+          "tabs": [],
+          "artifacts": [],
+          "properties": null
         }
-    ],
-    "stages": [
-        {
-            "name": "migration",
-            "fetch_materials": true,
-            "clean_working_directory": true,
-            "never_cleanup_artifacts": false,
-            "approval": {
-                "type": "success",
-                "authorization": {
-                    "roles": [],
-                    "users": []
-                }
-            },
-            "environment_variables": [],
-            "jobs": [
-                {
-                    "name": "migration",
-                    "run_instance_count": null,
-                    "timeout": null,
-                    "environment_variables": [],
-                    "resources": [],
-                    "tasks": [
-                        {
-                            "type": "exec",
-                            "attributes": {
-                                "run_if": [
-                                    "passed"
-                                ],
-                                "on_cancel": null,
-                                "command": "make",
-                                "arguments": [
-                                    "schema_migrate"
-                                ],
-                                "working_directory": "project"
-                            }
-                        }
-                    ],
-                    "tabs": [],
-                    "artifacts": [],
-                    "properties": null
-                }
-            ]
-        },
-        {
-            "name": "delivery",
-            "fetch_materials": true,
-            "clean_working_directory": true,
-            "never_cleanup_artifacts": false,
-            "approval": {
-                "type": "success",
-                "authorization": {
-                    "roles": [],
-                    "users": []
-                }
-            },
-            "environment_variables": [],
-            "jobs": [
-                {
-                    "name": "delivery",
-                    "run_instance_count": null,
-                    "timeout": null,
-                    "environment_variables": [],
-                    "resources": [],
-                    "tasks": [
-                        {
-                            "type": "exec",
-                            "attributes": {
-                                "run_if": [
-                                    "passed"
-                                ],
-                                "on_cancel": null,
-                                "command": "make",
-                                "arguments": [
-                                    "data_load"
-                                ],
-                                "working_directory": "project"
-                            }
-                        }
-                    ],
-                    "tabs": [],
-                    "artifacts": [],
-                    "properties": null
-                }
-            ]
-        },
-        {
-            "name": "health",
-            "fetch_materials": true,
-            "clean_working_directory": true,
-            "never_cleanup_artifacts": false,
-            "approval": {
-                "type": "success",
-                "authorization": {
-                    "roles": [],
-                    "users": []
-                }
-            },
-            "environment_variables": [],
-            "jobs": [
-                {
-                    "name": "health",
-                    "run_instance_count": null,
-                    "timeout": null,
-                    "environment_variables": [],
-                    "resources": [],
-                    "tasks": [
-                        {
-                            "type": "exec",
-                            "attributes": {
-                                "run_if": [
-                                    "passed"
-                                ],
-                                "on_cancel": null,
-                                "command": "make",
-                                "arguments": [
-                                    "health_checks"
-                                ],
-                                "working_directory": "project"
-                            }
-                        }
-                    ],
-                    "tabs": [
-                        {
-                            "name": "Report",
-                            "path": "report.html"
-                        }
-                    ],
-                    "artifacts": [
-                        {
-                            "destination": "",
-                            "source": "project/schemas/results/report.html",
-                            "type": "test"
-                        }
-                    ],
-                    "properties": null
-                }
-            ]
-        }
-    ],
-    "tracking_tool": null,
-    "timer": null
+      ]
+    }
+  ],
+  "tracking_tool": null,
+  "timer": null
 }

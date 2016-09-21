@@ -21,6 +21,7 @@ type Config struct {
 	PgDatabase string
 	PgUser     string
 	PgPassword string
+	PgSSLMode  string
 
 	GOCDHost     string
 	GOCDPort     string
@@ -45,6 +46,7 @@ func NewDefaultConfig() *Config {
 		PgDatabase:   "postgres",
 		PgUser:       "postgres",
 		PgPassword:   "password",
+		PgSSLMode:    "disable",
 		GOCDHost:     "http://localhost",
 		GOCDPort:     "8153",
 		GOCDUser:     "",
@@ -87,6 +89,11 @@ func NewConfig() (config *Config) {
 	if os.Getenv("PGPASSWORD") != "" {
 		log.Debug("Retrieving value from PGPASSWORD environment variable.")
 		config.PgPassword = os.Getenv("PGPASSWORD")
+	}
+
+	if os.Getenv("PGSSLMODE") != "" {
+		log.Debug("Retrieving value from PGSSLMODE environment variable.")
+		config.PgSSLMode = os.Getenv("PGSSLMODE")
 	}
 
 	if os.Getenv("GOCDHOST") != "" {
@@ -177,13 +184,15 @@ func (config *Config) DBURI() (dbURI string) {
 	parsedURI["PgHost"] = url.QueryEscape(config.PgHost)
 	parsedURI["PgPort"] = url.QueryEscape(config.PgPort)
 	parsedURI["PgDatabase"] = url.QueryEscape(config.PgDatabase)
+	parsedURI["sslmode"] = config.PgSSLMode
 
-	dbURI = fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=require",
+	dbURI = fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
 		parsedURI["PgUser"],
 		parsedURI["PgPassword"],
 		parsedURI["PgHost"],
 		parsedURI["PgPort"],
-		parsedURI["PgDatabase"])
+		parsedURI["PgDatabase"],
+		parsedURI["sslmode"])
 
 	return
 }

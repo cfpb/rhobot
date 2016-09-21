@@ -4,10 +4,15 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"strings"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/flosch/pongo2"
 )
+
+func init() {
+	pongo2.RegisterFilter("addquote", filterAddquote)
+}
 
 // JSONReportRunner initilization should contain any variables used for report
 type JSONReportRunner struct{}
@@ -53,4 +58,10 @@ func (p2rr Pongo2ReportRunner) ReportReader(reportSet Set) (io.Reader, error) {
 	r := bytes.NewReader(reportBytes)
 	log.Debug(string(reportBytes))
 	return r, err
+}
+
+// filterAddquote pongo2 filter for adding an extra quote
+func filterAddquote(in *pongo2.Value, param *pongo2.Value) (*pongo2.Value, *pongo2.Error) {
+	output := strings.Replace(in.String(), "'", "''", -1)
+	return pongo2.AsValue(output), nil
 }

@@ -9,7 +9,7 @@ import (
 func TestGetDBURI(t *testing.T) {
 	config := NewDefaultConfig()
 
-	if config.DBURI() != "postgres://postgres:password@localhost:5432/postgres?sslmode=require" {
+	if config.DBURI() != "postgres://postgres:password@localhost:5432/postgres?sslmode=disable" {
 		log.Errorf("Testing GetDBURI failed: %s", config.DBURI())
 		t.Fail()
 	}
