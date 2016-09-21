@@ -186,19 +186,19 @@ func main() {
 					log.Debugf("%v: %v", pipelineRunFlag.GetName(), pipelineRun)
 				}
 
-				if c.String("stage-run") != "" {
-					stageRun = c.String("stage-run")
-					log.Debugf("stage-run %v", stageRun)
+				if c.String(stageRunFlag.GetName()) != "" {
+					stageRun = c.String(stageRunFlag.GetName())
+					log.Debugf("%v: %v", stageRunFlag.GetName(), stageRun)
 				}
 
-				if c.String("artifact-path") != "" {
-					artifactPath = c.String("artifact-path")
-					log.Debugf("artifact-path %v", artifactPath)
+				if c.String(artifactPathFlag.GetName()) != "" {
+					artifactPath = c.String(artifactPathFlag.GetName())
+					log.Debugf("%v: %v", artifactPathFlag.GetName(), artifactPath)
 				}
 
-				if c.String("save") != "" {
-					artifactSavePath = c.String("save")
-					log.Debugf("save %v", artifactSavePath)
+				if c.String(artifactSavePathFlag.GetName()) != "" {
+					artifactSavePath = c.String(artifactSavePathFlag.GetName())
+					log.Debugf("%v: %v", artifactSavePathFlag.GetName(), artifactSavePath)
 				}
 
 				getArtifact(gocdServer, pipeline, stage, job, pipelineRun, stageRun, artifactPath, artifactSavePath)
