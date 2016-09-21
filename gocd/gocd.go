@@ -349,30 +349,37 @@ func (server Server) historyGET(pipelineName string) (historyJSON bytes.Buffer, 
 
 // History gets the run history of a pipeline of a given name exist. returns map
 func History(server *Server, name string) (latestRuns map[string]int, err error) {
+
+	//Get pipeline history if it exist
 	historyJSON, err := server.historyGET(name)
 	if err != nil {
 		log.Fatalf("Could not find run history for pipeline: %v", name)
 	}
 
-	//Parse JSON to get last run ids from pipeline and stages
+	//setup temp vatiables
 	var responseMap map[string]*json.RawMessage
 	var pipelineArr []map[string]*json.RawMessage
 	var pipelineLatest map[string]*json.RawMessage
 	var pipelineCounter int
 	var stages []map[string]*json.RawMessage
 
+	//unmarshal raw json into temp variables.
 	_ = json.Unmarshal(historyJSON.Bytes(), &responseMap)
 	_ = json.Unmarshal(*responseMap["pipelines"], &pipelineArr)
 	pipelineLatest = pipelineArr[0]
 	_ = json.Unmarshal(*pipelineLatest["counter"], &pipelineCounter)
 
+	//setup return variable
 	latestRuns = make(map[string]int)
 	latestRuns["p_"+name] = pipelineCounter
 
+	//setup temp variables for loop
 	_ = json.Unmarshal(*pipelineLatest["stages"], &stages)
 	var stageName string
 	var stageCounterStr string
 	var stageCounterInt int
+
+	//loop through and parse stages JSON to get "counter" vatiables
 	for _, stage := range stages {
 		_ = json.Unmarshal(*stage["name"], &stageName)
 		_ = json.Unmarshal(*stage["counter"], &stageCounterStr)
