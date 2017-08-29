@@ -1,18 +1,18 @@
 db:
   image: postgres
   ports:
-    - "5432"
+  - 5432:5432/tcp
 
 gocd:
-  image: gocd/gocd-server
+  image: gocd/gocd-server:v17.8.0
+  hostname: go-server
   ports:
-    - "8153:8153"
-  net: "host"
+  - 8153:8153/tcp
+  - 8154:8154/tcp
 
 agent:
-  image: gocd/gocd-agent
-  net: "host"
+  image: gocd/gocd-agent-alpine-3.5:v17.8.0
+  links:
+    - gocd
   environment:
-    - GO_SERVER=http://localhost
-#   links:
-#     - gocd:go-server
+    AGENT_KEY: '123456789abcdef'
