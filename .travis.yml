@@ -3,24 +3,18 @@ sudo: required
 language: go
 go:
     - 1.5.1
+    - 1.6.2
 
 services:
     - docker
 
 env:
     global:
-        - DOCKER_VERSION=1.10.1-0~trusty
-        - DOCKER_COMPOSE_VERSION=1.6.0
+        - DOCKER_COMPOSE_VERSION=1.8.0
 
 before_install:
     # For integration with codecov.io
     - go get github.com/modocache/gover
-
-    # list docker-engine versions
-    - apt-cache madison docker-engine
-
-    # upgrade docker-engine to specific version
-    - sudo apt-get -o Dpkg::Options::="--force-confnew" install -y --force-yes docker-engine=${DOCKER_VERSION}
 
     # reinstall docker-compose at specific version
     - sudo rm /usr/local/bin/docker-compose
