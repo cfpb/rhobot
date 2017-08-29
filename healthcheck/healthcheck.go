@@ -13,13 +13,14 @@ import (
 // SQLHealthCheck is a data type for storing the definition
 // and results of a SQL based health check
 type SQLHealthCheck struct {
-	Expected string `yaml:"expected"`
-	Query    string `yaml:"query"`
-	Title    string `yaml:"title"`
-	Severity string `yaml:"severity"`
-	Passed   bool
-	Actual   string
-	Equal    bool
+	Expected  string `yaml:"expected"`
+	Query     string `yaml:"query"`
+	Title     string `yaml:"title"`
+	Severity  string `yaml:"severity"`
+	Operation string `yaml:"operation,omitempty"`
+	Passed    bool
+	Actual    string
+	Equal     bool
 }
 
 // Format is for unmarshiling a healthcheck file
@@ -149,9 +150,28 @@ func (healthCheck *SQLHealthCheck) RunHealthCheck(cxn *sql.DB) {
 		rows.Next()
 		rows.Scan(&answer)
 
+		compResult := false
+		switch strings.ToLower(healthCheck.Operation) {
+		case "eq":
+			compResult = healthCheck.Expected == answer
+		case "ne":
+			compResult = healthCheck.Expected != answer
+		case "lt":
+			compResult = healthCheck.Expected < answer
+		case "le":
+			compResult = healthCheck.Expected <= answer
+		case "gt":
+			compResult = healthCheck.Expected > answer
+		case "ge":
+			compResult = healthCheck.Expected >= answer
+		default:
+			log.Info("opperation not specified, checking if equals")
+			compResult = healthCheck.Expected == answer
+		}
+
 		healthCheck.Passed = true
-		healthCheck.Equal = healthCheck.Expected == answer
 		healthCheck.Actual = answer
+		healthCheck.Equal = compResult
 	}
 
 }

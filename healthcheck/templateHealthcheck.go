@@ -14,14 +14,15 @@ CREATE TABLE IF NOT EXISTS {{metadata.schema}}.{{metadata.table}}
   query text,
   executed text,
   expected text,
+	operation text,
   actual text,
   severity text,
   "timestamp" timestamp with time zone
 );
 
-INSERT INTO "{{metadata.schema}}"."{{metadata.table}}" ("title", "query", "executed", "expected", "actual", "severity", "timestamp") VALUES
+INSERT INTO "{{metadata.schema}}"."{{metadata.table}}" ("title", "query", "executed", "expected", "operation", "actual", "severity", "timestamp") VALUES
 {% for element in elements %}
-('{{ element.Title }}', '{{ element.Query | safe | addquote }}', '{{ element.Passed}}', '{{ element.Expected  | safe | addquote  }}', '{{ element.Actual  | safe | addquote  }}', '{{ element.Severity }}', '{{ metadata.timestamp }}') ` +
+('{{ element.Title }}', '{{ element.Query | safe | addquote }}', '{{ element.Passed}}', '{{ element.Expected  | safe | addquote  }}', '{{ element.Operation  | safe | addquote  }}', '{{ element.Actual  | safe | addquote  }}', '{{ element.Severity }}', '{{ metadata.timestamp }}') ` +
 	`{% if forloop.Last%};{%else%},{%endif%}` +
 	`{% endfor %}`
 
@@ -36,6 +37,7 @@ const TemplateHealthcheckHTML = `
             <th>Query</th>
             <th>Test Ran?</th>
             <th>Expected</th>
+						<th>Operation</th>
             <th>Actual</th>
         </tr>
         {% for element in elements %}
@@ -47,9 +49,11 @@ const TemplateHealthcheckHTML = `
                     <td bgcolor="green">{{ element.Passed }}</td>
 										{% if element.Equal == "TRUE"%}
                     	<td bgcolor="green">{{ element.Expected }}</td>
+											<td bgcolor="green">{{ element.Operation }}</td>
                     	<td bgcolor="green">{{ element.Actual }}</td>
 										{% elif  element.Equal == "FALSE" %}
                     	<td bgcolor="red">{{ element.Expected }}</td>
+											<td bgcolor="red">{{ element.Operation }}</td>
                     	<td bgcolor="red">{{ element.Actual }}</td>
 										{% endif %}
                 {% elif  element.Passed == "FAIL" %}

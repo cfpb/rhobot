@@ -137,6 +137,24 @@ func TestPreformAllChecks(t *testing.T) {
 	}
 }
 
+func TestPreformOperationsChecks(t *testing.T) {
+	cxn := database.GetPGConnection(conf.DBURI())
+	healthChecks, _ := ReadHealthCheckYAMLFromFile("healthchecksOperations.yml")
+	results, err := healthChecks.PreformHealthChecks(cxn)
+
+	if err != nil {
+		if len(err) != 3 {
+			log.Error("3 Errors weere expected")
+			t.Fail()
+		}
+	}
+
+	if len(results) != 10 {
+		log.Error("Healthcheck results had the wrong length")
+		t.Fail()
+	}
+}
+
 func TestEvaluatingInvalidChecks(t *testing.T) {
 	cxn := database.GetPGConnection(conf.DBURI())
 	healthChecks, _ := ReadHealthCheckYAMLFromFile("healthchecksInvalid.yml")
@@ -159,6 +177,7 @@ func TestSQLHealthCheckReportableElement(t *testing.T) {
 		"true",
 		"select (select count(1) from information_schema.tables) > 0;",
 		"basic test", "FATAL",
+		"equal",
 		true,
 		"t",
 		true,
@@ -180,8 +199,8 @@ func TestHealthcheckPongo2Report(t *testing.T) {
 	var prr report.Runner
 	var phr report.Handler
 
-	rePass = SQLHealthCheck{"true", "select (select count(1) from information_schema.tables) > 0;", "basic test", "FATAL", true, "t", true}
-	reFail = SQLHealthCheck{"true", "select (select count(1) from information_schema.tables) < 0;", "basic test", "FATAL", false, "f", true}
+	rePass = SQLHealthCheck{"true", "select (select count(1) from information_schema.tables) > 0;", "basic test", "equal", "FATAL", true, "t", true}
+	reFail = SQLHealthCheck{"true", "select (select count(1) from information_schema.tables) < 0;", "basic test", "equal", "FATAL", false, "f", true}
 	prr = report.NewPongo2ReportRunnerFromString(TemplateHealthcheckHTML)
 	phr = report.PrintHandler{}
 
