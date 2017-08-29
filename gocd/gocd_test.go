@@ -174,6 +174,58 @@ func TestGocdPUT(t *testing.T) {
 	}
 }
 
+func TestGocdPUTEncrypt(t *testing.T) {
+	pipeline, etag, _ := server.pipelineGET("test")
+
+	// The Index of the STRANGE Environment Variable could potentially change between update
+	strangeIndex := -1
+	for i, envVar := range pipeline.EnvironmentVariables {
+		if envVar.Name == "STRANGE" {
+			strangeIndex = i
+			break
+		}
+	}
+	if strangeIndex == -1 {
+		log.Debugf("EnvironmentVariables: %+v\n", pipeline.EnvironmentVariables)
+		t.Fatal("STRANGE environment variable not found")
+	}
+
+	//Update Original Value to Time Value
+	pipeline, etag, _ = server.pipelineGET("test")
+	strangeEnvVarA := pipeline.EnvironmentVariables[strangeIndex]
+	pipeline.EnvironmentVariables[strangeIndex].Value = "something"
+	pipeline.EnvironmentVariables[strangeIndex].EncryptedValue = ""
+	pipeline.EnvironmentVariables[strangeIndex].Secure = true
+	pipeline, _ = server.pipelineConfigPUT(pipeline, etag)
+
+	//Update Time Value to Original Value
+	pipeline, etag, _ = server.pipelineGET("test")
+	strangeEnvVarB := pipeline.EnvironmentVariables[strangeIndex]
+	pipeline.EnvironmentVariables[strangeIndex].Value = strangeEnvVarA.Value
+	pipeline.EnvironmentVariables[strangeIndex].EncryptedValue = ""
+	pipeline.EnvironmentVariables[strangeIndex].Secure = false
+	pipeline, err := server.pipelineConfigPUT(pipeline, etag)
+
+	if err != nil {
+		log.Debugf("Put Error: %+v\n", err.Error())
+		t.Error("Put failed")
+	}
+
+	pipeline, _, _ = server.pipelineGET("test")
+	strangeEnvVarC := pipeline.EnvironmentVariables[strangeIndex]
+	log.Debugf("STRANGE VALUE A: %+v\n", strangeEnvVarA)
+	log.Debugf("STRANGE VALUE B: %+v\n", strangeEnvVarB)
+	log.Debugf("STRANGE VALUE C: %+v\n", strangeEnvVarC)
+
+	if strangeEnvVarA == strangeEnvVarB {
+		t.Error("STRANGE environment variable was not changed")
+	}
+
+	if strangeEnvVarA != strangeEnvVarC {
+		t.Error("STRANGE environment variable was not reset")
+	}
+}
+
 func TestGocdTimeout(t *testing.T) {
 
 	serverA := NewServerConfig(conf.GOCDHost, conf.GOCDPort, conf.GOCDUser, conf.GOCDPassword, "120")

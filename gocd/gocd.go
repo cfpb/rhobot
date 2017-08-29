@@ -2,350 +2,26 @@ package gocd
 
 import (
 	"bytes"
-	"crypto/tls"
 	"encoding/json"
-	"fmt"
-	"io/ioutil"
-	"net/http"
 	"path/filepath"
 	"reflect"
 	"strconv"
 	"strings"
-	"time"
 
 	log "github.com/Sirupsen/logrus"
 )
 
-// PipelineConfig a GoCD structure that contains a pipeline and a group
-type PipelineConfig struct {
-	Group    string   `json:"group"`
-	Pipeline Pipeline `json:"pipeline"`
-}
-
-// EnvironmentVariables a GoCD structure for an environment variable
-type EnvironmentVariables struct {
-	Secure         bool   `json:"secure"`
-	Name           string `json:"name"`
-	Value          string `json:"value,omitempty"`
-	EncryptedValue string `json:"encrypted_value,omitempty"`
-}
-
-// Pipeline a GoCD structure that represents a pipeline
-type Pipeline struct {
-	LabelTemplate         string                 `json:"label_template"`
-	EnablePipelineLocking bool                   `json:"enable_pipeline_locking"`
-	Name                  string                 `json:"name"`
-	Template              interface{}            `json:"template"`
-	Parameters            []interface{}          `json:"parameters"`
-	EnvironmentVariables  []EnvironmentVariables `json:"environment_variables"`
-	Materials             []struct {
-		Type       string `json:"type"`
-		Attributes struct {
-			URL             string      `json:"url"`
-			Destination     string      `json:"destination"`
-			Filter          interface{} `json:"filter"`
-			Name            interface{} `json:"name"`
-			AutoUpdate      bool        `json:"auto_update"`
-			Branch          string      `json:"branch"`
-			SubmoduleFolder interface{} `json:"submodule_folder"`
-		} `json:"attributes"`
-	} `json:"materials"`
-	Stages []struct {
-		Name                  string `json:"name"`
-		FetchMaterials        bool   `json:"fetch_materials"`
-		CleanWorkingDirectory bool   `json:"clean_working_directory"`
-		NeverCleanupArtifacts bool   `json:"never_cleanup_artifacts"`
-		Approval              struct {
-			Type          string `json:"type"`
-			Authorization struct {
-				Roles []interface{} `json:"roles"`
-				Users []interface{} `json:"users"`
-			} `json:"authorization"`
-		} `json:"approval"`
-		EnvironmentVariables []EnvironmentVariables `json:"environment_variables"`
-		Jobs                 []struct {
-			Name                 string        `json:"name"`
-			RunInstanceCount     interface{}   `json:"run_instance_count"`
-			Timeout              interface{}   `json:"timeout"`
-			EnvironmentVariables []interface{} `json:"environment_variables"`
-			Resources            []interface{} `json:"resources"`
-			Tasks                []struct {
-				Type       string `json:"type"`
-				Attributes struct {
-					RunIf            []string    `json:"run_if"`
-					OnCancel         interface{} `json:"on_cancel"`
-					Command          string      `json:"command"`
-					Arguments        []string    `json:"arguments"`
-					WorkingDirectory string      `json:"working_directory"`
-				} `json:"attributes"`
-			} `json:"tasks"`
-			Tabs       []interface{} `json:"tabs"`
-			Artifacts  []interface{} `json:"artifacts"`
-			Properties interface{}   `json:"properties"`
-		} `json:"jobs"`
-	} `json:"stages"`
-	TrackingTool interface{} `json:"tracking_tool"`
-	Timer        interface{} `json:"timer"`
-}
-
-// Server a representstion of a GoCD server
-type Server struct {
-	Host     string
-	Port     string
-	User     string
-	Password string
-	Timeout  time.Duration
-}
-
-// client returns a http client with longer timeout and skip verify
-func client(timeout time.Duration) *http.Client {
-	transCfg := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}
-	return &http.Client{
-		Timeout:   timeout,
-		Transport: transCfg,
-	}
-}
-
-// NewServerConfig Create a Server object from a config
-func NewServerConfig(host string, port string, user string, password string, timeoutStr string) *Server {
-
-	// timeout casting to seconds
-	timeout := time.Duration(120 * time.Second)
-	i, err := strconv.Atoi(timeoutStr)
-	if err == nil {
-		timeout = time.Duration(i) * time.Second
-	} else {
-		log.Warn("Failed to convert timeout to seconds: ", err)
-	}
-
-	return &Server{
-		Host:     host,
-		Port:     port,
-		User:     user,
-		Password: password,
-		Timeout:  timeout,
-	}
-}
-
-// URL returns the host of the GoCD server
-func (server Server) URL() string {
-	return fmt.Sprintf("%s:%s", server.Host, server.Port)
-}
-
-func printPrettyJSON(body []byte, objectname string) (prettyJSON bytes.Buffer, err error) {
-	err = json.Indent(&prettyJSON, body, "", "\t")
-	if err != nil {
-		log.Warn("Failed to prettify JSON: ", err)
-	}
-	log.Debug(objectname+" JSON:", string(prettyJSON.Bytes()))
-	return
-}
-
-// readPipelineJSONFromFile reads a GoCD structure from a json file
-func readPipelineJSONFromFile(path string) (pipeline Pipeline, err error) {
-	data, err := ioutil.ReadFile(path)
-	if err == nil {
-		err = json.Unmarshal(data, &pipeline)
-	}
-	return
-}
-
-// Partially generated by curl-to-Go: https://mholt.github.io/curl-to-go
-func (server Server) pipelineConfigPUT(pipeline Pipeline, etag string) (pipelineResult Pipeline, err error) {
-
-	pipelineName := pipeline.Name
-
-	payloadBytes, err := json.Marshal(pipeline)
-	if err != nil {
-		return
-	}
-
-	payloadBody := bytes.NewReader(payloadBytes)
-
-	req, err := http.NewRequest("PUT", server.URL()+"/go/api/admin/pipelines/"+pipelineName, payloadBody)
-	if err != nil {
-		return
-	}
-
-	if len(server.User) > 0 && len(server.Password) > 0 {
-		req.SetBasicAuth(server.User, server.Password)
-	}
-	req.Header.Set("Accept", "application/vnd.go.cd.v1+json")
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("If-Match", etag)
-
-	log.Debugf("Sending request: %v", req)
-	resp, err := client(server.Timeout).Do(req)
-	if err != nil {
-		return
-	}
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return
-	}
-
-	if resp.StatusCode != 200 {
-		err = fmt.Errorf("Bad response code: %d, response: %s", resp.StatusCode, body)
-		return
-	}
-
-	printPrettyJSON(body, "pipelineConfig")
-
-	err = json.Unmarshal(body, &pipelineResult)
-	return
-}
-
-// Generated by curl-to-Go: https://mholt.github.io/curl-to-go
-func (server Server) pipelineConfigPOST(pipelineConfig PipelineConfig) (pipeline Pipeline, err error) {
-	payloadBytes, err := json.Marshal(pipelineConfig)
-	if err != nil {
-		return
-	}
-
-	payloadBody := bytes.NewReader(payloadBytes)
-
-	req, err := http.NewRequest("POST", server.URL()+"/go/api/admin/pipelines", payloadBody)
-	if err != nil {
-		return
-	}
-
-	if len(server.User) > 0 && len(server.Password) > 0 {
-		req.SetBasicAuth(server.User, server.Password)
-	}
-	req.Header.Set("Accept", "application/vnd.go.cd.v1+json")
-	req.Header.Set("Content-Type", "application/json")
-
-	log.Debugf("Sending request: %v", req)
-	resp, err := client(server.Timeout).Do(req)
-	if err != nil {
-		return
-	}
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return
-	}
-
-	if resp.StatusCode != 200 {
-		err = fmt.Errorf("Bad response code: %d with response: %s", resp.StatusCode, body)
-		return
-	}
-
-	printPrettyJSON(body, "pipelineConfig")
-
-	err = json.Unmarshal(body, &pipeline)
-	return
-}
-
-// Partially generated by curl-to-Go: https://mholt.github.io/curl-to-go
-func (server Server) pipelineGET(pipelineName string) (pipeline Pipeline, etag string, err error) {
-	req, err := http.NewRequest("GET", server.URL()+"/go/api/admin/pipelines/"+pipelineName, nil)
-	if err != nil {
-		return
-	}
-
-	if len(server.User) > 0 && len(server.Password) > 0 {
-		req.SetBasicAuth(server.User, server.Password)
-	}
-	req.Header.Set("Accept", "application/vnd.go.cd.v1+json")
-	req.Header.Set("Content-Type", "application/json")
-
-	log.Debugf("Sending request: %v", req)
-	resp, err := client(server.Timeout).Do(req)
-	if err != nil {
-		return
-	}
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return
-	}
-
-	if resp.StatusCode != 200 {
-		err = fmt.Errorf("Bad response code: %d with response: %s", resp.StatusCode, body)
-		return
-	}
-
-	printPrettyJSON(body, "pipelineConfig")
-
-	etag = resp.Header.Get("ETag")
-	err = json.Unmarshal(body, &pipeline)
-	return
-}
-
-// Partially generated by curl-to-Go: https://mholt.github.io/curl-to-go
-func (server Server) artifactGET(pipelineName string, pipelineID int, stageName string, stageID int, jobName string, artifactPath string) (fileBytes *bytes.Buffer, err error) {
-	reqStr := fmt.Sprintf("%s/go/files/%s/%d/%s/%d/%s/%s/", server.URL(),
-		pipelineName, pipelineID, stageName, stageID, jobName, artifactPath)
-	req, err := http.NewRequest("GET", reqStr, nil)
-	if err != nil {
-		return
-	}
-
-	if len(server.User) > 0 && len(server.Password) > 0 {
-		req.SetBasicAuth(server.User, server.Password)
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	log.Debugf("Sending request: %v", req)
-	resp, err := client(server.Timeout).Do(req)
-	if err != nil {
-		return
-	}
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return
-	}
-
-	if resp.StatusCode != 200 {
-		err = fmt.Errorf("Bad response code: %d with response: %s", resp.StatusCode, body)
-		return
-	}
-
-	fileBytes = bytes.NewBuffer(body)
-	return
-}
-
-// Partially generated by curl-to-Go: https://mholt.github.io/curl-to-go
-func (server Server) historyGET(pipelineName string) (historyJSON bytes.Buffer, err error) {
-	req, err := http.NewRequest("GET", server.URL()+"/go/api/pipelines/"+pipelineName+"/history", nil)
-	if err != nil {
-		return
-	}
-
-	if len(server.User) > 0 && len(server.Password) > 0 {
-		req.SetBasicAuth(server.User, server.Password)
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	log.Debugf("Sending request: %v", req)
-	resp, err := client(server.Timeout).Do(req)
-	if err != nil {
-		return
-	}
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return
-	}
-
-	if resp.StatusCode != 200 {
-		err = fmt.Errorf("Bad response code: %d with response: %s", resp.StatusCode, body)
-		return
-	}
-
-	historyJSON, err = printPrettyJSON(body, "pipelineHistory")
-	return
-}
+// // History gets the run history of a pipeline of a given name exist. returns map
+// func History(server *Server, name string) (latestRuns map[string]int, err error) {
+//
+// 	//Get pipeline history if it exist
+// 	latestRuns, err = server.historyGET(name)
+// 	if err != nil {
+// 		log.Fatalf("Could not find run history for pipeline: %v", name)
+// 	}
+//
+// 	return
+// }
 
 // History gets the run history of a pipeline of a given name exist. returns map
 func History(server *Server, name string) (latestRuns map[string]int, err error) {
@@ -408,7 +84,7 @@ func Push(server *Server, path string, group string) (err error) {
 
 	etag, remotePipeline, err := Exist(server, localPipeline.Name)
 	if err != nil {
-		log.Info(err)
+		log.Info(err.Error())
 	}
 
 	Compare(localPipeline, remotePipeline, path)
@@ -477,11 +153,4 @@ func Compare(localPipeline Pipeline, remotePipeline Pipeline, path string) {
 		}
 
 	}
-}
-
-// writePipeline helper function to write a pipeline to file
-func writePipeline(path string, pipeline Pipeline) (err error) {
-	pipelineJSON, _ := json.MarshalIndent(pipeline, "", "    ")
-	err = ioutil.WriteFile(path, pipelineJSON, 0666)
-	return
 }
