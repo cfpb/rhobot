@@ -2,7 +2,6 @@ sudo: required
 
 language: go
 go:
-    - 1.5.1
     - 1.6.2
 
 services:
@@ -33,6 +32,12 @@ install:
     - go get gopkg.in/yaml.v2
     - go get github.com/flosch/pongo2
     - go get gopkg.in/gomail.v2
+
+before_script:
+    # Disable services enabled by default
+    # http://docs.travis-ci.com/user/database-setup/#MySQL
+    - sudo /etc/init.d/mysql stop
+    - sudo /etc/init.d/postgresql stop
 
 script:
     # setup dockerized services
