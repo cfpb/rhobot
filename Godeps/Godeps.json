@@ -19,6 +19,10 @@
 			"Rev": "58f1f3387f7c57843ff829d92a759d08abe5a63f"
 		},
 		{
+			"ImportPath": "github.com/juju/errors",
+			"Rev": "c7d06af17c68cd34c835053720b21f6549d9b0ee"
+		},
+		{
 			"ImportPath": "github.com/lib/pq",
 			"Comment": "go1.0-cutoff-175-ge422674",
 			"Rev": "e42267488fe361b9dc034be7a6bffef5b195bceb"
