@@ -16,13 +16,14 @@ CREATE TABLE IF NOT EXISTS {{metadata.schema}}.{{metadata.table}}
   expected text,
 	operation text,
   actual text,
+	equal text,
   severity text,
   "timestamp" timestamp with time zone
 );
 
-INSERT INTO "{{metadata.schema}}"."{{metadata.table}}" ("title", "query", "executed", "expected", "operation", "actual", "severity", "timestamp") VALUES
+INSERT INTO "{{metadata.schema}}"."{{metadata.table}}" ("title", "query", "executed", "expected", "operation", "actual", "equal", "severity", "timestamp") VALUES
 {% for element in elements %}
-('{{ element.Title }}', '{{ element.Query | safe | addquote }}', '{{ element.Passed}}', '{{ element.Expected  | safe | addquote  }}', '{{ element.Operation  | safe | addquote  }}', '{{ element.Actual  | safe | addquote  }}', '{{ element.Severity }}', '{{ metadata.timestamp }}') ` +
+('{{ element.Title }}', '{{ element.Query | safe | addquote }}', '{{ element.Passed}}', '{{ element.Expected  | safe | addquote  }}', '{{ element.Operation  | safe | addquote  }}', '{{ element.Actual  | safe | addquote  }}', '{{ element.Equal  | safe | addquote  }}', '{{ element.Severity }}', '{{ metadata.timestamp }}') ` +
 	`{% if forloop.Last%};{%else%},{%endif%}` +
 	`{% endfor %}`
 

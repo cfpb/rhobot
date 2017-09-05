@@ -212,7 +212,7 @@ func (healthCheck *SQLHealthCheck) EvaluateHealthCheck() (err HCError) {
 // Implementation of report.Element
 
 // HealthCheckReportHeaders headers used for GetHeaders
-var HealthCheckReportHeaders = []string{"Title", "Query", "Passed", "Expected", "Actual", "Equal", "Severity"}
+var HealthCheckReportHeaders = []string{"Title", "Query", "Passed", "Expected", "Actual", "Equal", "Severity", "Operation"}
 
 // GetHeaders Implementation for report.Element
 func (healthCheck SQLHealthCheck) GetHeaders() []string {
@@ -242,6 +242,8 @@ func (healthCheck SQLHealthCheck) GetValue(key string) string {
 		return "FALSE"
 	case HealthCheckReportHeaders[6]:
 		return strings.ToUpper(healthCheck.Severity)
+	case HealthCheckReportHeaders[7]:
+		return strings.ToUpper(healthCheck.Operation)
 	}
 	return ""
 }
