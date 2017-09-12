@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
@@ -30,7 +31,7 @@ func updateGOCDHost(c *cli.Context, config *config.Config) (gocdServer *gocd.Ser
 	return
 }
 
-func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath string, emailListPath string, hcSchema string, hcTable string) {
+func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath string, templatePath string, emailListPath string, hcSchema string, hcTable string) {
 	healthChecks, err := healthcheck.ReadHealthCheckYAMLFromFile(healthcheckPath)
 	if err != nil {
 		log.Fatal("Failed to read healthchecks: ", err)
@@ -66,9 +67,21 @@ func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath
 	}
 	rs := report.Set{Elements: elements, Metadata: metadata}
 
+	// Load template if provided
+	var template string
+	if templatePath != "" {
+		data, readErr := ioutil.ReadFile(templatePath)
+		if readErr != nil {
+			log.Fatal("Failed to read template: ", err)
+		}
+		template = string(data)
+	} else {
+		template = healthcheck.TemplateHealthcheckHTML
+	}
+
 	// Write report to file
 	if reportPath != "" {
-		prr := report.NewPongo2ReportRunnerFromString(healthcheck.TemplateHealthcheckHTML)
+		prr := report.NewPongo2ReportRunnerFromString(template)
 		reader, _ := prr.ReportReader(rs)
 		fhr := report.FileHandler{Filename: reportPath}
 		err = fhr.HandleReport(reader)
@@ -79,7 +92,7 @@ func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath
 
 	// Email report
 	if emailListPath != "" {
-		prr := report.NewPongo2ReportRunnerFromString(healthcheck.TemplateHealthcheckHTML)
+		prr := report.NewPongo2ReportRunnerFromString(template)
 		df, err := report.ReadDistributionFormatYAMLFromFile(emailListPath)
 		if err != nil {
 			log.Fatal("Failed to read distribution format: ", err)
@@ -124,7 +137,7 @@ func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath
 
 	// Bad Exit
 	if HCerrs != nil {
-		log.Fatal("Healthchecks Failed:\n", spew.Sdump(HCerrs))
+		log.Panic("Healthchecks Failed:\n", spew.Sdump(HCerrs))
 	}
 }
 

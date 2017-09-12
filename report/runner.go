@@ -8,6 +8,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/flosch/pongo2"
+	"github.com/vanng822/go-premailer/premailer"
 )
 
 func init() {
@@ -51,13 +52,22 @@ type Pongo2ReportRunner struct {
 
 // ReportReader Implementation for Pongo2ReportRunner
 func (p2rr Pongo2ReportRunner) ReportReader(reportSet Set) (io.Reader, error) {
-	reportBytes, err := p2rr.Template.ExecuteBytes(reportSet.GetReportMap())
+	templateBytes, err := p2rr.Template.ExecuteBytes(reportSet.GetReportMap())
 	if err != nil {
 		log.Fatal(err)
 	}
-	r := bytes.NewReader(reportBytes)
-	log.Debug(string(reportBytes))
-	return r, err
+	templateString := string(templateBytes)
+	log.Debug(templateString)
+
+	premailerCSS := premailer.NewPremailerFromString(templateString, premailer.NewOptions())
+	premailerInline, err := premailerCSS.Transform()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Debug(premailerInline)
+	reader := strings.NewReader(premailerInline)
+	return reader, err
 }
 
 // filterAddquote pongo2 filter for adding an extra quote
