@@ -81,18 +81,18 @@ func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath
 
 	// Write report to file
 	if reportPath != "" {
-		prr := report.NewPongo2ReportRunnerFromString(template)
+		prr := report.NewPongo2ReportRunnerFromString(template, true)
 		reader, _ := prr.ReportReader(rs)
 		fhr := report.FileHandler{Filename: reportPath}
 		err = fhr.HandleReport(reader)
 		if err != nil {
-			log.Error("error writing report to PG database: ", err)
+			log.Error("error writing report to file: ", err)
 		}
 	}
 
 	// Email report
 	if emailListPath != "" {
-		prr := report.NewPongo2ReportRunnerFromString(template)
+		prr := report.NewPongo2ReportRunnerFromString(template, true)
 		df, err := report.ReadDistributionFormatYAMLFromFile(emailListPath)
 		if err != nil {
 			log.Fatal("Failed to read distribution format: ", err)
@@ -126,7 +126,7 @@ func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath
 	}
 
 	if hcSchema != "" && hcTable != "" {
-		prr := report.NewPongo2ReportRunnerFromString(healthcheck.TemplateHealthcheckPostgres)
+		prr := report.NewPongo2ReportRunnerFromString(healthcheck.TemplateHealthcheckPostgres, false)
 		pgr := report.PGHandler{Cxn: cxn}
 		reader, err := prr.ReportReader(rs)
 		err = pgr.HandleReport(reader)

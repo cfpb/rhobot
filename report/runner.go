@@ -38,16 +38,18 @@ func NewPongo2ReportRunnerFromFile(TemplateFilePath string) *Pongo2ReportRunner 
 }
 
 // NewPongo2ReportRunnerFromString constructor with template string
-func NewPongo2ReportRunnerFromString(TemplateString string) *Pongo2ReportRunner {
+func NewPongo2ReportRunnerFromString(TemplateString string, StyleCSS bool) *Pongo2ReportRunner {
 	var template = pongo2.Must(pongo2.FromString(TemplateString))
 	return &Pongo2ReportRunner{
 		Template: *template,
+		StyleCSS: StyleCSS,
 	}
 }
 
 // Pongo2ReportRunner initilization with template object
 type Pongo2ReportRunner struct {
 	Template pongo2.Template
+	StyleCSS bool
 }
 
 // ReportReader Implementation for Pongo2ReportRunner
@@ -57,16 +59,25 @@ func (p2rr Pongo2ReportRunner) ReportReader(reportSet Set) (io.Reader, error) {
 		log.Fatal(err)
 	}
 	templateString := string(templateBytes)
-	log.Debug(templateString)
+	// log.Debug(templateString)
 
-	premailerCSS := premailer.NewPremailerFromString(templateString, premailer.NewOptions())
-	premailerInline, err := premailerCSS.Transform()
-	if err != nil {
-		log.Fatal(err)
+	var premailerInline string
+	var reader io.Reader
+
+	if p2rr.StyleCSS {
+		premailerCSS := premailer.NewPremailerFromString(templateString, premailer.NewOptions())
+
+		premailerInline, err = premailerCSS.Transform()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// log.Debug(premailerInline)
+		reader = strings.NewReader(premailerInline)
+
+	} else {
+		reader = strings.NewReader(templateString)
 	}
-
-	log.Debug(premailerInline)
-	reader := strings.NewReader(premailerInline)
 	return reader, err
 }
 

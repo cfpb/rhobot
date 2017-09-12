@@ -37,7 +37,7 @@ func TestPostgresHealthCheckReporting(t *testing.T) {
 	}
 	rs := report.Set{Elements: elements, Metadata: metadata}
 
-	prr := report.NewPongo2ReportRunnerFromString(healthcheck.TemplateHealthcheckPostgres)
+	prr := report.NewPongo2ReportRunnerFromString(healthcheck.TemplateHealthcheckPostgres, false)
 	pgr := report.PGHandler{Cxn: cxn}
 	reader, err := prr.ReportReader(rs)
 	err = pgr.HandleReport(reader)
@@ -74,7 +74,7 @@ func TestPostgresHealthCheckEscape(t *testing.T) {
 	}
 	rs := report.Set{Elements: elements, Metadata: metadata}
 
-	prr := report.NewPongo2ReportRunnerFromString(healthcheck.TemplateHealthcheckPostgres)
+	prr := report.NewPongo2ReportRunnerFromString(healthcheck.TemplateHealthcheckPostgres, false)
 	pgr := report.PGHandler{Cxn: cxn}
 	reader, err := prr.ReportReader(rs)
 	err = pgr.HandleReport(reader)
