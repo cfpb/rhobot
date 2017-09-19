@@ -40,6 +40,7 @@ func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath
 
 	results, HCerrs := healthChecks.PreformHealthChecks(cxn)
 	numErrors := 0
+	numWarnings := 0
 	fatal := false
 	for _, hcerr := range HCerrs {
 		if strings.Contains(strings.ToUpper(hcerr.Err), "FATAL") {
@@ -47,6 +48,9 @@ func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath
 		}
 		if strings.Contains(strings.ToUpper(hcerr.Err), "ERROR") {
 			numErrors = numErrors + 1
+		}
+		if strings.Contains(strings.ToUpper(hcerr.Err), "WARNING") {
+			numWarnings = numWarnings + 1
 		}
 	}
 
@@ -61,7 +65,7 @@ func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath
 		"db_name":   config.PgDatabase,
 		"footer":    healthcheck.FooterHealthcheck,
 		"timestamp": time.Now().Format(time.ANSIC),
-		"status":    healthcheck.StatusHealthchecks(numErrors, fatal),
+		"status":    healthcheck.StatusHealthchecks(numErrors, numWarnings, fatal),
 		"schema":    hcSchema,
 		"table":     hcTable,
 	}
@@ -100,7 +104,7 @@ func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath
 
 		for _, level := range report.LogLevelArray {
 
-			subjectStr := healthcheck.SubjectHealthcheck(healthChecks.Name, config.PgDatabase, config.PgHost, level, numErrors, fatal)
+			subjectStr := healthcheck.SubjectHealthcheck(healthChecks.Name, config.PgDatabase, config.PgHost, level, numErrors, numWarnings, fatal)
 
 			logFilteredSet := report.FilterReportSet(rs, level)
 			reader, _ := prr.ReportReader(logFilteredSet)
