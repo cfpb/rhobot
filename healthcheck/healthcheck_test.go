@@ -46,10 +46,15 @@ func TestRunningBasicChecks(t *testing.T) {
 func TestEvaluatingBasicChecks(t *testing.T) {
 	cxn := database.GetPGConnection(conf.DBURI())
 	healthChecks, _ := ReadHealthCheckYAMLFromFile("healthchecksTest.yml")
-	results, err := healthChecks.PreformHealthChecks(cxn)
+	results, hcerrs := healthChecks.PreformHealthChecks(cxn)
+	numErrors, numWarnings, _ := EvaluateHCErrors(hcerrs)
 
-	if err != nil {
-		log.Error(err)
+	if numWarnings != 1 {
+		log.Error("numWarnings had the wrong length")
+		t.Fail()
+	}
+	if numErrors > 0 {
+		log.Error("numErrors had the wrong length")
 		t.Fail()
 	}
 	if len(results) != 3 {

@@ -4,7 +4,6 @@ import (
 	"io/ioutil"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -39,20 +38,7 @@ func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath
 	cxn := database.GetPGConnection(config.DBURI())
 
 	results, HCerrs := healthChecks.PreformHealthChecks(cxn)
-	numErrors := 0
-	numWarnings := 0
-	fatal := false
-	for _, hcerr := range HCerrs {
-		if strings.Contains(strings.ToUpper(hcerr.Err), "FATAL") {
-			fatal = true
-		}
-		if strings.Contains(strings.ToUpper(hcerr.Err), "ERROR") {
-			numErrors = numErrors + 1
-		}
-		if strings.Contains(strings.ToUpper(hcerr.Err), "WARNING") {
-			numWarnings = numWarnings + 1
-		}
-	}
+	numErrors, numWarnings, fatal := healthcheck.EvaluateHCErrors(HCerrs)
 
 	var elements []report.Element
 	for _, val := range results {
@@ -140,7 +126,7 @@ func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath
 	}
 
 	// Bad Exit
-	if HCerrs != nil {
+	if numErrors > 0 || fatal == true {
 		log.Panic("Healthchecks Failed:\n", spew.Sdump(HCerrs))
 	}
 }
