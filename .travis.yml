@@ -2,26 +2,18 @@ sudo: required
 
 language: go
 go:
-    - 1.5.1
+    - 1.6.2
 
 services:
     - docker
 
 env:
     global:
-        - DOCKER_VERSION=1.10.1-0~trusty
-        - DOCKER_COMPOSE_VERSION=1.6.0
+        - DOCKER_COMPOSE_VERSION=1.8.0
 
 before_install:
     # For integration with codecov.io
     - go get github.com/modocache/gover
-
-    # list docker-engine versions
-    - apt-cache madison docker-engine
-
-    # upgrade docker-engine to specific version
-    - sudo apt-get -o Dpkg::Options::="--force-confnew" install -y --force-yes docker-engine=${DOCKER_VERSION}
-
     # reinstall docker-compose at specific version
     - sudo rm /usr/local/bin/docker-compose
     - curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` > docker-compose
@@ -32,13 +24,14 @@ before_install:
 go_import_path: github.com/cfpb/rhobot
 
 install:
-    - go get github.com/Sirupsen/logrus
-    - go get github.com/urfave/cli
-    - go get -u github.com/davecgh/go-spew/spew
-    - go get github.com/lib/pq
-    - go get gopkg.in/yaml.v2
-    - go get github.com/flosch/pongo2
-    - go get gopkg.in/gomail.v2
+    - go get github.com/tools/godep
+    - godep restore
+
+before_script:
+    # Disable services enabled by default
+    # http://docs.travis-ci.com/user/database-setup/#MySQL
+    - sudo /etc/init.d/mysql stop
+    - sudo /etc/init.d/postgresql stop
 
 script:
     # setup dockerized services

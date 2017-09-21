@@ -1,0 +1,60 @@
+name: rhobot healthcheck operations
+tests:
+- severity: "error"
+  expected: "1"
+  title: "default opperation"
+  query: "select 1;"
+
+- severity: "error"
+  expected: "1"
+  title: "equals opperation"
+  query: "select 1;"
+  operation: "eq"
+
+- severity: "error"
+  expected: "1"
+  title: "not equals opperation fail"
+  query: "select 1;"
+  operation: "ne"
+
+- severity: "error"
+  expected: "0"
+  title: "not equals opperation"
+  query: "select 1;"
+  operation: "ne"
+
+- severity: "error"
+  expected: "1"
+  title: "less than fail"
+  query: "select 1;"
+  operation: "lt"
+
+- severity: "error"
+  expected: "0"
+  title: "less than"
+  query: "select 1;"
+  operation: "lt"
+
+- severity: "error"
+  expected: "1"
+  title: "less than equals"
+  query: "select 1;"
+  operation: "le"
+
+- severity: "error"
+  expected: "1"
+  title: "greater than fail"
+  query: "select 1;"
+  operation: "gt"
+
+- severity: "error"
+  expected: "2"
+  title: "greater than"
+  query: "select 1;"
+  operation: "gt"
+
+- severity: "error"
+  expected: "1"
+  title: "greater than equals"
+  query: "select 1;"
+  operation: "ge"
