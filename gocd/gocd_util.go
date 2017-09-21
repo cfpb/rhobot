@@ -13,7 +13,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
-// Server a representstion of a GoCD server
+//  Server is an object representation of a GoCD server
 type Server struct {
 	Host     string
 	Port     string

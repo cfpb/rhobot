@@ -11,18 +11,6 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
-// // History gets the run history of a pipeline of a given name exist. returns map
-// func History(server *Server, name string) (latestRuns map[string]int, err error) {
-//
-// 	//Get pipeline history if it exist
-// 	latestRuns, err = server.historyGET(name)
-// 	if err != nil {
-// 		log.Fatalf("Could not find run history for pipeline: %v", name)
-// 	}
-//
-// 	return
-// }
-
 // History gets the run history of a pipeline of a given name exist. returns map
 func History(server *Server, name string) (latestRuns map[string]int, err error) {
 

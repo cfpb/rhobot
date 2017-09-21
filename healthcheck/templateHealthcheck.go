@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS {{metadata.schema}}.{{metadata.table}}
   query text,
   executed text,
   expected text,
-	operation text,
+  operation text,
   actual text,
 	equal text,
   severity text,
@@ -38,7 +38,7 @@ const TemplateHealthcheckHTML = `
             <th>Query</th>
             <th>Test Ran?</th>
             <th>Expected</th>
-						<th>Operation</th>
+            <th>Operation</th>
             <th>Actual</th>
         </tr>
         {% for element in elements %}
