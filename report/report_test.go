@@ -86,7 +86,7 @@ func TestPGReportToDB(t *testing.T) {
 	{% endfor %}
 	`
 
-	prr = NewPongo2ReportRunnerFromString(templateSimplePostgres)
+	prr = NewPongo2ReportRunnerFromString(templateSimplePostgres, false)
 	pghr = PGHandler{cxn}
 	//pghr = PrintHandler{}
 
@@ -112,7 +112,7 @@ func TestPongo2Report(t *testing.T) {
 	var phr Handler
 
 	re = SimpleRE{[]string{"Some", "Thing"}}
-	prr = NewPongo2ReportRunnerFromString(TemplateSimple)
+	prr = NewPongo2ReportRunnerFromString(TemplateSimple, true)
 	phr = PrintHandler{}
 
 	elements := []Element{re, re}
@@ -135,8 +135,8 @@ func TestMultiplePongoReports(t *testing.T) {
 	var phr2 Handler
 
 	re = SimpleRE{[]string{"Some", "Thing"}}
-	prr = NewPongo2ReportRunnerFromString(TemplateSimple)
-	prr2 = NewPongo2ReportRunnerFromString(TemplateSimple)
+	prr = NewPongo2ReportRunnerFromString(TemplateSimple, true)
+	prr2 = NewPongo2ReportRunnerFromString(TemplateSimple, true)
 	phr = PrintHandler{}
 	phr2 = FileHandler{
 		Filename: "pongoReport.html",

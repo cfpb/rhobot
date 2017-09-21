@@ -4,9 +4,18 @@
 	"GodepVersion": "v79",
 	"Deps": [
 		{
+			"ImportPath": "github.com/PuerkitoBio/goquery",
+			"Comment": "v1.1.0-7-gce645ea",
+			"Rev": "ce645ea5e67a713599b7415f21f0786451fa9554"
+		},
+		{
 			"ImportPath": "github.com/Sirupsen/logrus",
 			"Comment": "v1.0.3-11-g89742ae",
 			"Rev": "89742aefa4b206dcf400792f3bd35b542998eb3b"
+		},
+		{
+			"ImportPath": "github.com/andybalholm/cascadia",
+			"Rev": "349dd0209470eabd9514242c688c403c0926d266"
 		},
 		{
 			"ImportPath": "github.com/davecgh/go-spew/spew",
@@ -17,6 +26,10 @@
 			"ImportPath": "github.com/flosch/pongo2",
 			"Comment": "v1.0-rc1-227-g58f1f33",
 			"Rev": "58f1f3387f7c57843ff829d92a759d08abe5a63f"
+		},
+		{
+			"ImportPath": "github.com/gorilla/css/scanner",
+			"Rev": "398b0b046082ecb3694c01bec6b336a06a4e530a"
 		},
 		{
 			"ImportPath": "github.com/juju/errors",
@@ -33,13 +46,39 @@
 			"Rev": "e42267488fe361b9dc034be7a6bffef5b195bceb"
 		},
 		{
+			"ImportPath": "github.com/pmezard/go-difflib/difflib",
+			"Comment": "v1.0.0",
+			"Rev": "792786c7400a136282c1664665ae0a8db921c6c2"
+		},
+		{
+			"ImportPath": "github.com/stretchr/testify/assert",
+			"Comment": "v1.1.4-71-g890a5c3",
+			"Rev": "890a5c3458b43e6104ff5da8dfa139d013d77544"
+		},
+		{
 			"ImportPath": "github.com/urfave/cli",
 			"Comment": "v1.20.0-3-gf017f86",
 			"Rev": "f017f86fccc5a039a98f23311f34fdf78b014f78"
 		},
 		{
+			"ImportPath": "github.com/vanng822/css",
+			"Rev": "00dd67448c5d4dc2a68f971a5793848c3ea202c8"
+		},
+		{
+			"ImportPath": "github.com/vanng822/go-premailer/premailer",
+			"Rev": "5de9db06a79a0e960a6362ac93ecc3b5f66f787e"
+		},
+		{
 			"ImportPath": "golang.org/x/crypto/ssh/terminal",
 			"Rev": "81e90905daefcd6fd217b62423c0908922eadb30"
+		},
+		{
+			"ImportPath": "golang.org/x/net/html",
+			"Rev": "57efc9c3d9f91fb3277f8da1cff370539c4d3dc5"
+		},
+		{
+			"ImportPath": "golang.org/x/net/html/atom",
+			"Rev": "57efc9c3d9f91fb3277f8da1cff370539c4d3dc5"
 		},
 		{
 			"ImportPath": "golang.org/x/sys/unix",
