@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"io/ioutil"
 	"os"
 	"strconv"
@@ -16,6 +17,8 @@ import (
 	"github.com/urfave/cli"
 )
 
+//TODO: Fatal exits should happen in the main loop, not the utils, pass errs up
+
 func updateLogLevel(c *cli.Context, config *config.Config) {
 	if c.GlobalString("loglevel") != "" {
 		config.SetLogLevel(c.GlobalString("loglevel"))
@@ -30,7 +33,7 @@ func updateGOCDHost(c *cli.Context, config *config.Config) (gocdServer *gocd.Ser
 	return
 }
 
-func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath string, templatePath string, emailListPath string, hcSchema string, hcTable string) {
+func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath string, templatePath string, emailListPath string, hcSchema string, hcTable string) (err error) {
 	healthChecks, err := healthcheck.ReadHealthCheckYAMLFromFile(healthcheckPath)
 	if err != nil {
 		log.Fatal("Failed to read healthchecks: ", err)
@@ -125,10 +128,12 @@ func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath
 		}
 	}
 
-	// Bad Exit
 	if numErrors > 0 || fatal == true {
-		log.Panic("Healthchecks Failed:\n", spew.Sdump(HCerrs))
+		// log.Panic("Healthchecks Failed:\n", spew.Sdump(HCerrs))
+		err := errors.New("Healthchecks Failed")
+		return err
 	}
+	return nil
 }
 
 func getArtifact(gocdServer *gocd.Server, pipeline string, stage string, job string,

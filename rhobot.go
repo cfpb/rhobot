@@ -147,8 +147,12 @@ func main() {
 					log.Infof("Saving healthchecks to %v.%v", schema, table)
 				}
 
-				healthcheckRunner(conf, healthcheckPath, reportPath, templatePath, emailListPath, schema, table)
-				log.Info("Success!")
+				err := healthcheckRunner(conf, healthcheckPath, reportPath, templatePath, emailListPath, schema, table)
+				if err != nil {
+					log.Fatal(err)
+				}
+				log.Info("Healthchecks Success!")
+
 			},
 		},
 		{
