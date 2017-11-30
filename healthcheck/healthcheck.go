@@ -179,7 +179,7 @@ func (healthCheck *SQLHealthCheck) EvaluateHealthCheck() (err HCError) {
 		errorMsg := fmt.Sprintf("%s - healthcheck failed \n%s",
 			severity, string(prettyHealthCheck))
 
-		switch strings.ToLower(healthCheck.Severity) {
+		switch strings.ToUpper(healthCheck.Severity) {
 		case "FATAL":
 			log.Errorf("Breaking Away Early \n%s ", errorMsg)
 			earlyExit = true
