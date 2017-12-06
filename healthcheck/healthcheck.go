@@ -150,7 +150,7 @@ func (healthCheck *SQLHealthCheck) RunHealthCheck(cxn *sql.DB) {
 
 }
 
-// EvaluateHCErrors given a slice of HCErrors, determin if error or early exit1
+// EvaluateHCErrors given a slice of HCErrors, determine if error or early exit
 func EvaluateHCErrors(hcerrors []HCError) (int, int, bool) {
 	numErrors := 0
 	numWarnings := 0

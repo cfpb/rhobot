@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS {{metadata.schema}}.{{metadata.table}}
   expected text,
   operation text,
   actual text,
-	equal text,
+  equal text,
   severity text,
   "timestamp" timestamp with time zone
 );
@@ -96,7 +96,7 @@ func SubjectHealthcheck(name string, dbName string, hostname string, level strin
 	return subjectStr
 }
 
-// StatusHealthchecks returns a simple summray for all healthchecks
+// StatusHealthchecks returns a simple summary for all healthchecks
 func StatusHealthchecks(errors int, warnings int, fatal bool) string {
 
 	if fatal {

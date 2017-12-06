@@ -59,7 +59,6 @@ func (p2rr Pongo2ReportRunner) ReportReader(reportSet Set) (io.Reader, error) {
 		log.Fatal(err)
 	}
 	templateString := string(templateBytes)
-	// log.Debug(templateString)
 
 	var premailerInline string
 	var reader io.Reader
@@ -72,7 +71,6 @@ func (p2rr Pongo2ReportRunner) ReportReader(reportSet Set) (io.Reader, error) {
 			log.Fatal(err)
 		}
 
-		// log.Debug(premailerInline)
 		reader = strings.NewReader(premailerInline)
 
 	} else {
