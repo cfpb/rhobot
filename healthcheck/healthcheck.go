@@ -3,39 +3,13 @@ package healthcheck
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 )
-
-// SQLHealthCheck is a data type for storing the definition
-// and results of a SQL based health check
-type SQLHealthCheck struct {
-	Expected  string `yaml:"expected"`
-	Query     string `yaml:"query"`
-	Title     string `yaml:"title"`
-	Severity  string `yaml:"severity"`
-	Operation string `yaml:"operation,omitempty"`
-	Passed    bool
-	Actual    string
-	Equal     bool
-}
-
-// Format is for unmarshiling a healthcheck file
-// and contains control information for a set of SQLHealthChecks
-type Format struct {
-	Name         string           `yaml:"name"`
-	Distribution []string         `yaml:"distribution"`
-	Tests        []SQLHealthCheck `yaml:"tests"`
-}
-
-// HCError is a error helper for knowing to exit early on a failed healthcheck
-type HCError struct {
-	Err  string
-	Exit bool
-}
 
 // ReadHealthCheckYAMLFromFile loads healthcheck data from a YAML file
 func ReadHealthCheckYAMLFromFile(path string) (format Format, err error) {
@@ -176,35 +150,55 @@ func (healthCheck *SQLHealthCheck) RunHealthCheck(cxn *sql.DB) {
 
 }
 
+// EvaluateHCErrors given a slice of HCErrors, determine if error or early exit
+func EvaluateHCErrors(hcerrors []HCError) (int, int, bool) {
+	numErrors := 0
+	numWarnings := 0
+	fatal := false
+	for _, hcerr := range hcerrors {
+		if strings.Contains(strings.ToUpper(hcerr.Err), "FATAL") {
+			fatal = true
+		}
+		if strings.Contains(strings.ToUpper(hcerr.Err), "ERROR") {
+			numErrors = numErrors + 1
+		}
+		if strings.Contains(strings.ToUpper(hcerr.Err), "WARN") {
+			numWarnings = numWarnings + 1
+		}
+	}
+	return numErrors, numWarnings, fatal
+}
+
 // EvaluateHealthCheck runs through a single healthcheck and acts on the result
 func (healthCheck *SQLHealthCheck) EvaluateHealthCheck() (err HCError) {
 
 	prettyHealthCheck, _ := yaml.Marshal(&healthCheck)
+	severity := strings.ToUpper(healthCheck.Severity)
 	if !healthCheck.Equal || !healthCheck.Passed {
-		switch strings.ToLower(healthCheck.Severity) {
+		earlyExit := false
+		errorMsg := fmt.Sprintf("%s - healthcheck failed \n%s",
+			severity, string(prettyHealthCheck))
 
-		// When Fatal, return early with an error
-		case "fatal":
-			log.Errorf("FATAL healthcheck failed - Breaking Away Early\n%s", string(prettyHealthCheck))
-			err = HCError{"FATAL healthCheck failure", true}
-
-		// When Error, keep running but add an error
-		case "error":
-			log.Errorf("Healthcheck failed\n%s", string(prettyHealthCheck))
-			err = HCError{"ERROR healthCheck failure", false}
-
-		// When warn or info, print out the result and keep running
-		case "warn":
-			log.Warnf("Healthcheck failed\n%s", string(prettyHealthCheck))
-		case "info":
-			log.Infof("Healthcheck failed\n%s", string(prettyHealthCheck))
-		case "debug":
-			log.Debugf("Healthcheck failed\n%s", string(prettyHealthCheck))
+		switch strings.ToUpper(healthCheck.Severity) {
+		case "FATAL":
+			log.Errorf("Breaking Away Early \n%s ", errorMsg)
+			earlyExit = true
+		case "ERROR":
+			log.Error(errorMsg)
+		case "WARN":
+			log.Warn(errorMsg)
+		case "INFO":
+			log.Info(errorMsg)
+		case "DEBUG":
+			log.Debug(errorMsg)
 		default:
-			log.Errorf("Undefined severity level:%s\n%s", strings.ToUpper(healthCheck.Severity), string(prettyHealthCheck))
+			log.Errorf("Breaking Away Early %s\n%s ", severity, errorMsg)
 		}
+		err = HCError{errorMsg, earlyExit}
 	} else {
-		log.Printf("%s healthcheck passed\n%s\n", strings.ToUpper(healthCheck.Severity), string(prettyHealthCheck))
+		happyMsg := fmt.Sprintf("%s - healthcheck passed \n%s",
+			severity, string(prettyHealthCheck))
+		log.Print(happyMsg)
 	}
 	return err
 }
@@ -212,7 +206,7 @@ func (healthCheck *SQLHealthCheck) EvaluateHealthCheck() (err HCError) {
 // Implementation of report.Element
 
 // HealthCheckReportHeaders headers used for GetHeaders
-var HealthCheckReportHeaders = []string{"Title", "Query", "Passed", "Expected", "Actual", "Equal", "Severity"}
+var HealthCheckReportHeaders = []string{"Title", "Query", "Passed", "Expected", "Actual", "Equal", "Severity", "Operation"}
 
 // GetHeaders Implementation for report.Element
 func (healthCheck SQLHealthCheck) GetHeaders() []string {
@@ -242,6 +236,8 @@ func (healthCheck SQLHealthCheck) GetValue(key string) string {
 		return "FALSE"
 	case HealthCheckReportHeaders[6]:
 		return strings.ToUpper(healthCheck.Severity)
+	case HealthCheckReportHeaders[7]:
+		return strings.ToUpper(healthCheck.Operation)
 	}
 	return ""
 }

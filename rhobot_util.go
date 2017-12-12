@@ -1,9 +1,10 @@
 package main
 
 import (
+	"errors"
+	"io/ioutil"
 	"os"
 	"strconv"
-	"strings"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -15,6 +16,8 @@ import (
 	"github.com/davecgh/go-spew/spew"
 	"github.com/urfave/cli"
 )
+
+//TODO: Fatal exits should happen in the main loop, not the utils, pass errs up
 
 func updateLogLevel(c *cli.Context, config *config.Config) {
 	if c.GlobalString("loglevel") != "" {
@@ -30,7 +33,7 @@ func updateGOCDHost(c *cli.Context, config *config.Config) (gocdServer *gocd.Ser
 	return
 }
 
-func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath string, emailListPath string, hcSchema string, hcTable string) {
+func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath string, templatePath string, emailListPath string, hcSchema string, hcTable string) (err error) {
 	healthChecks, err := healthcheck.ReadHealthCheckYAMLFromFile(healthcheckPath)
 	if err != nil {
 		log.Fatal("Failed to read healthchecks: ", err)
@@ -38,16 +41,7 @@ func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath
 	cxn := database.GetPGConnection(config.DBURI())
 
 	results, HCerrs := healthChecks.PreformHealthChecks(cxn)
-	numErrors := 0
-	fatal := false
-	for _, hcerr := range HCerrs {
-		if strings.Contains(strings.ToUpper(hcerr.Err), "FATAL") {
-			fatal = true
-		}
-		if strings.Contains(strings.ToUpper(hcerr.Err), "ERROR") {
-			numErrors = numErrors + 1
-		}
-	}
+	numErrors, numWarnings, fatal := healthcheck.EvaluateHCErrors(HCerrs)
 
 	var elements []report.Element
 	for _, val := range results {
@@ -60,26 +54,38 @@ func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath
 		"db_name":   config.PgDatabase,
 		"footer":    healthcheck.FooterHealthcheck,
 		"timestamp": time.Now().Format(time.ANSIC),
-		"status":    healthcheck.StatusHealthchecks(numErrors, fatal),
+		"status":    healthcheck.StatusHealthchecks(numErrors, numWarnings, fatal),
 		"schema":    hcSchema,
 		"table":     hcTable,
 	}
 	rs := report.Set{Elements: elements, Metadata: metadata}
 
+	// Load template if provided
+	var template string
+	if templatePath != "" {
+		data, readErr := ioutil.ReadFile(templatePath)
+		if readErr != nil {
+			log.Fatal("Failed to read template: ", err)
+		}
+		template = string(data)
+	} else {
+		template = healthcheck.TemplateHealthcheckHTML
+	}
+
 	// Write report to file
 	if reportPath != "" {
-		prr := report.NewPongo2ReportRunnerFromString(healthcheck.TemplateHealthcheckHTML)
+		prr := report.NewPongo2ReportRunnerFromString(template, true)
 		reader, _ := prr.ReportReader(rs)
 		fhr := report.FileHandler{Filename: reportPath}
 		err = fhr.HandleReport(reader)
 		if err != nil {
-			log.Error("error writing report to PG database: ", err)
+			log.Error("error writing report to file: ", err)
 		}
 	}
 
 	// Email report
 	if emailListPath != "" {
-		prr := report.NewPongo2ReportRunnerFromString(healthcheck.TemplateHealthcheckHTML)
+		prr := report.NewPongo2ReportRunnerFromString(template, true)
 		df, err := report.ReadDistributionFormatYAMLFromFile(emailListPath)
 		if err != nil {
 			log.Fatal("Failed to read distribution format: ", err)
@@ -87,7 +93,7 @@ func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath
 
 		for _, level := range report.LogLevelArray {
 
-			subjectStr := healthcheck.SubjectHealthcheck(healthChecks.Name, config.PgDatabase, config.PgHost, level, numErrors, fatal)
+			subjectStr := healthcheck.SubjectHealthcheck(healthChecks.Name, config.PgDatabase, config.PgHost, level, numErrors, numWarnings, fatal)
 
 			logFilteredSet := report.FilterReportSet(rs, level)
 			reader, _ := prr.ReportReader(logFilteredSet)
@@ -113,7 +119,7 @@ func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath
 	}
 
 	if hcSchema != "" && hcTable != "" {
-		prr := report.NewPongo2ReportRunnerFromString(healthcheck.TemplateHealthcheckPostgres)
+		prr := report.NewPongo2ReportRunnerFromString(healthcheck.TemplateHealthcheckPostgres, false)
 		pgr := report.PGHandler{Cxn: cxn}
 		reader, err := prr.ReportReader(rs)
 		err = pgr.HandleReport(reader)
@@ -122,10 +128,12 @@ func healthcheckRunner(config *config.Config, healthcheckPath string, reportPath
 		}
 	}
 
-	// Bad Exit
-	if HCerrs != nil {
-		log.Fatal("Healthchecks Failed:\n", spew.Sdump(HCerrs))
+	if numErrors > 0 || fatal == true {
+		// log.Panic("Healthchecks Failed:\n", spew.Sdump(HCerrs))
+		err := errors.New("Healthchecks Failed")
+		return err
 	}
+	return nil
 }
 
 func getArtifact(gocdServer *gocd.Server, pipeline string, stage string, job string,

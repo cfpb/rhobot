@@ -40,6 +40,11 @@ func main() {
 		Value: "",
 		Usage: "path to the healthcheck report",
 	}
+	templateFileFlag := cli.StringFlag{
+		Name:  "template",
+		Value: "",
+		Usage: "path to the report template",
+	}
 	dburiFlag := cli.StringFlag{
 		Name:  "dburi",
 		Value: "",
@@ -91,6 +96,7 @@ func main() {
 				"[--schema SCHEMA] [--table TABLE]",
 			Flags: []cli.Flag{
 				reportFileFlag,
+				templateFileFlag,
 				dburiFlag,
 				emailListFlag,
 				schemaFlag,
@@ -102,6 +108,7 @@ func main() {
 				// variables to be populated by cli args
 				var healthcheckPath string
 				var reportPath string
+				var templatePath string
 				var emailListPath string
 				var schema string
 				var table string
@@ -124,6 +131,11 @@ func main() {
 					log.Infof("Generating report at %v", reportPath)
 				}
 
+				if c.String("template") != "" {
+					templatePath = c.String("template")
+					log.Infof("Using template at %v", templatePath)
+				}
+
 				if c.String("email") != "" {
 					emailListPath = c.String("email")
 					log.Infof("Emailing report to %v", emailListPath)
@@ -135,8 +147,12 @@ func main() {
 					log.Infof("Saving healthchecks to %v.%v", schema, table)
 				}
 
-				healthcheckRunner(conf, healthcheckPath, reportPath, emailListPath, schema, table)
-				log.Info("Success!")
+				err := healthcheckRunner(conf, healthcheckPath, reportPath, templatePath, emailListPath, schema, table)
+				if err != nil {
+					log.Fatal(err)
+				}
+				log.Info("Healthchecks Success!")
+
 			},
 		},
 		{

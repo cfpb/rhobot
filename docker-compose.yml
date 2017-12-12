@@ -15,4 +15,4 @@ agent:
   links:
     - gocd
   environment:
-    AGENT_KEY: '123456789abcdef'
+    GO_SERVER_URL: https://go-gocd:8154/go

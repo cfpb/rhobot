@@ -46,10 +46,15 @@ func TestRunningBasicChecks(t *testing.T) {
 func TestEvaluatingBasicChecks(t *testing.T) {
 	cxn := database.GetPGConnection(conf.DBURI())
 	healthChecks, _ := ReadHealthCheckYAMLFromFile("healthchecksTest.yml")
-	results, err := healthChecks.PreformHealthChecks(cxn)
+	results, hcerrs := healthChecks.PreformHealthChecks(cxn)
+	numErrors, numWarnings, _ := EvaluateHCErrors(hcerrs)
 
-	if err != nil {
-		log.Error(err)
+	if numWarnings != 1 {
+		log.Error("numWarnings had the wrong length")
+		t.Fail()
+	}
+	if numErrors > 0 {
+		log.Error("numErrors had the wrong length")
 		t.Fail()
 	}
 	if len(results) != 3 {
@@ -201,7 +206,7 @@ func TestHealthcheckPongo2Report(t *testing.T) {
 
 	rePass = SQLHealthCheck{"true", "select (select count(1) from information_schema.tables) > 0;", "basic test", "equal", "FATAL", true, "t", true}
 	reFail = SQLHealthCheck{"true", "select (select count(1) from information_schema.tables) < 0;", "basic test", "equal", "FATAL", false, "f", true}
-	prr = report.NewPongo2ReportRunnerFromString(TemplateHealthcheckHTML)
+	prr = report.NewPongo2ReportRunnerFromString(TemplateHealthcheckHTML, true)
 	phr = report.PrintHandler{}
 
 	elements := []report.Element{rePass, reFail}

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+
 	"github.com/cfpb/rhobot/config"
 	"github.com/cfpb/rhobot/database"
 	"github.com/cfpb/rhobot/healthcheck"
@@ -35,13 +36,25 @@ func TestPostgresHealthCheckReporting(t *testing.T) {
 	}
 	rs := report.Set{Elements: elements, Metadata: metadata}
 
-	prr := report.NewPongo2ReportRunnerFromString(healthcheck.TemplateHealthcheckPostgres)
+	prr := report.NewPongo2ReportRunnerFromString(healthcheck.TemplateHealthcheckPostgres, false)
 	pgr := report.PGHandler{Cxn: cxn}
 	reader, err := prr.ReportReader(rs)
 	err = pgr.HandleReport(reader)
 	if err != nil {
 		t.Fatalf("error writing report to PG database\n%s", err)
 	}
+}
+
+func TestTemplateHealthCheckReporting(t *testing.T) {
+
+	args := []string{
+		"rhobot",
+		"healthchecks", "healthcheck/healthchecksAll.yml",
+		"-template", "healthcheck/templateHealthcheck.html",
+		"-report", "testReportAll.html"}
+	os.Args = args
+	// TODO: need to find a better way to test fatal exits
+	// assert.Panics(t, main, "The healthchecks did not cause a panic")
 }
 
 func TestPostgresHealthCheckEscape(t *testing.T) {
@@ -60,7 +73,7 @@ func TestPostgresHealthCheckEscape(t *testing.T) {
 	}
 	rs := report.Set{Elements: elements, Metadata: metadata}
 
-	prr := report.NewPongo2ReportRunnerFromString(healthcheck.TemplateHealthcheckPostgres)
+	prr := report.NewPongo2ReportRunnerFromString(healthcheck.TemplateHealthcheckPostgres, false)
 	pgr := report.PGHandler{Cxn: cxn}
 	reader, err := prr.ReportReader(rs)
 	err = pgr.HandleReport(reader)

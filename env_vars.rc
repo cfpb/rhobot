@@ -1,0 +1,23 @@
+#!/bin/bash
+
+# export GOPATH=$HOME/Programs/go
+# export PATH=$PATH:$GOPATH/bin  #bash
+# set PATH $PATH $GOPATH/bin/   #fish
+
+export PGHOST=localhost
+export PGPORT=5432
+export PGDATABASE=testing
+export PGUSER=postgres
+export PGPASSWORD=postgres
+export PGSSLMODE=disable
+
+export GOCDHOST=http://localhost
+export GOCDPORT=8153
+export GOCDUSER=
+export GOCDPASSWORD=
+export GOCDTIMEOUT=120
+
+export SMTPHOST=localhost
+export SMTPPORT=25
+export SMTPEMAIL=dataops@cfpb.gov
+export SMTPNAME="Data Team"

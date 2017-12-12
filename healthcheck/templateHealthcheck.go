@@ -16,13 +16,14 @@ CREATE TABLE IF NOT EXISTS {{metadata.schema}}.{{metadata.table}}
   expected text,
   operation text,
   actual text,
+  equal text,
   severity text,
   "timestamp" timestamp with time zone
 );
 
-INSERT INTO "{{metadata.schema}}"."{{metadata.table}}" ("title", "query", "executed", "expected", "operation", "actual", "severity", "timestamp") VALUES
+INSERT INTO "{{metadata.schema}}"."{{metadata.table}}" ("title", "query", "executed", "expected", "operation", "actual", "equal", "severity", "timestamp") VALUES
 {% for element in elements %}
-('{{ element.Title }}', '{{ element.Query | safe | addquote }}', '{{ element.Passed}}', '{{ element.Expected  | safe | addquote  }}', '{{ element.Operation  | safe | addquote  }}', '{{ element.Actual  | safe | addquote  }}', '{{ element.Severity }}', '{{ metadata.timestamp }}') ` +
+('{{ element.Title }}', '{{ element.Query | safe | addquote }}', '{{ element.Passed}}', '{{ element.Expected  | safe | addquote  }}', '{{ element.Operation  | safe | addquote  }}', '{{ element.Actual  | safe | addquote  }}', '{{ element.Equal  | safe | addquote  }}', '{{ element.Severity }}', '{{ metadata.timestamp }}') ` +
 	`{% if forloop.Last%};{%else%},{%endif%}` +
 	`{% endfor %}`
 
@@ -79,7 +80,7 @@ const FooterHealthcheck = `
 `
 
 // SubjectHealthcheck creates a subject for healthcheck email
-func SubjectHealthcheck(name string, dbName string, hostname string, level string, errors int, fatal bool) string {
+func SubjectHealthcheck(name string, dbName string, hostname string, level string, errors int, warnings int, fatal bool) string {
 
 	hcName := name
 	if name == "" {
@@ -89,19 +90,21 @@ func SubjectHealthcheck(name string, dbName string, hostname string, level strin
 	subjectStr := fmt.Sprintf("%s - %s - %s - %s level",
 		hcName, dbName, hostname, strings.ToUpper(level))
 
-	statusStr := StatusHealthchecks(errors, fatal)
+	statusStr := StatusHealthchecks(errors, warnings, fatal)
 	subjectStr = fmt.Sprintf("%s - %s", statusStr, subjectStr)
 
 	return subjectStr
 }
 
-// StatusHealthchecks returns a simple summray for all healthchecks
-func StatusHealthchecks(errors int, fatal bool) string {
+// StatusHealthchecks returns a simple summary for all healthchecks
+func StatusHealthchecks(errors int, warnings int, fatal bool) string {
 
 	if fatal {
 		return fmt.Sprintf("FATAL")
 	} else if errors > 0 {
 		return fmt.Sprintf("ERROR(s) %s", strconv.Itoa(errors))
+	} else if warnings > 0 {
+		return fmt.Sprintf("WARNING(s) %s", strconv.Itoa(warnings))
 	} else {
 		return fmt.Sprintf("PASS")
 	}
