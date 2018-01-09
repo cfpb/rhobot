@@ -101,6 +101,12 @@ func Pull(server *Server, path string) (err error) {
 	return
 }
 
+// Attempt to delete pipeline if name matches existing
+func Delete(server *Server, name string) (pipeline Pipeline, err error) {
+	pipeline, err = server.pipelineDELETE(name)
+	return
+}
+
 // Exist checks if a pipeline of a given name exist, returns it's etag or an empty string
 func Exist(server *Server, name string) (etag string, pipeline Pipeline, err error) {
 	pipeline, etag, err = server.pipelineGET(name)

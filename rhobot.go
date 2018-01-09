@@ -287,6 +287,28 @@ func main() {
 						}
 					},
 				},
+				{
+					Name:  "delete",
+					Usage: "PIPELINE_NAME",
+					Flags: []cli.Flag{
+						gocdHostFlag,
+					},
+					Action: func(c *cli.Context) {
+						updateLogLevel(c, conf)
+						gocdServer = updateGOCDHost(c, conf)
+
+						if len(c.Args()) > 0 {
+							name := c.Args()[0]
+							log.Infof("Deleteing pipeline %v...", name)
+							if _, err := gocd.Delete(gocdServer, name); err != nil {
+								log.Fatal("Failed to delete pipeline: ", err)
+							}
+							log.Info("Success!")
+						} else {
+							log.Fatal("A pipeline name is required.")
+						}
+					},
+				},
 			},
 		},
 	}
