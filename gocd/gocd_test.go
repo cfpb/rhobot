@@ -86,6 +86,13 @@ func TestGocdGET(t *testing.T) {
 	}
 }
 
+func TestGocdDELETE(t *testing.T) {
+	_, _, err := server.pipelineDELETE("test")
+	if err != nil {
+		t.Error(err)
+	}
+}
+
 // //The following 2 tests require a pipeline to have a run history
 // //thus is commented out for testing on TravisCI
 // //Future scaffolding will be needed on travis to add an agent,
