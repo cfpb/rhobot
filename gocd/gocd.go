@@ -102,8 +102,30 @@ func Pull(server *Server, path string) (err error) {
 }
 
 // Attempt to delete pipeline if name matches existing
-func Delete(server *Server, name string) (pipeline Pipeline, err error) {
-	pipeline, err = server.pipelineDELETE(name)
+func Delete(server *Server, pipelineName string) (pipeline Pipeline, err error) {
+	environment, err := server.environmentGET()
+	if err != nil {
+		return
+	}
+
+	environmentName := findPipelineInEnvironment(environment, pipelineName)
+
+	defer func(err error) {
+		if environmentName != "" {
+			log.Info("Pipeline found in environment, removing from environment")
+
+			env, err := server.envConfigPOST(pipelineName, environmentName)
+			if err != nil {
+				return
+			}
+		}
+	}(err, env)
+
+	pipeline, err = server.pipelineDELETE(pipelineName)
+	if err != nil {
+		return
+	}
+
 	return
 }
 

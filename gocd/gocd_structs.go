@@ -71,3 +71,56 @@ type Pipeline struct {
 	TrackingTool interface{} `json:"tracking_tool"`
 	Timer        interface{} `json:"timer"`
 }
+
+type Environment struct {
+	Links struct {
+		Self struct {
+			Href string `json:"href"`
+		} `json:"self"`
+		Doc struct {
+			Href string `json:"href"`
+		} `json:"doc"`
+		Find struct {
+			Href string `json:"href"`
+		} `json:"find"`
+	} `json:"_links"`
+	Name      string `json:"name"`
+	Pipelines []struct {
+		Links struct {
+			Self struct {
+				Href string `json:"href"`
+			} `json:"self"`
+			Doc struct {
+				Href string `json:"href"`
+			} `json:"doc"`
+			Find struct {
+				Href string `json:"href"`
+			} `json:"find"`
+		} `json:"_links"`
+		Name string `json:"name"`
+	} `json:"pipelines"`
+	Agents []struct {
+		Links struct {
+			Self struct {
+				Href string `json:"href"`
+			} `json:"self"`
+			Doc struct {
+				Href string `json:"href"`
+			} `json:"doc"`
+			Find struct {
+				Href string `json:"href"`
+			} `json:"find"`
+		} `json:"_links"`
+		UUID string `json:"uuid"`
+	} `json:"agents"`
+	EnvironmentVariables []EnvironmentVariables `json:"environment_variables"`
+}
+
+type Payload struct {
+	Pipelines
+}
+
+type Pipelines struct {
+	// Add    []string `json:"add"`
+	Remove []string `json:"remove"`
+}
