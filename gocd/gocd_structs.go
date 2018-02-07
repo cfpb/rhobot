@@ -72,7 +72,7 @@ type Pipeline struct {
 	Timer        interface{} `json:"timer"`
 }
 
-type Environment struct {
+type Environment2 struct {
 	Links struct {
 		Self struct {
 			Href string `json:"href"`
@@ -115,6 +115,35 @@ type Environment struct {
 	} `json:"agents"`
 	EnvironmentVariables []EnvironmentVariables `json:"environment_variables"`
 }
+
+type Environment struct {
+	Links struct {
+		Self struct {
+			Href string `json:"href"`
+		} `json:"self"`
+		Doc struct {
+			Href string `json:"href"`
+		} `json:"doc"`
+	} `json:"_links"`
+	Embedded struct {
+		Environment2 []Environment2 `json:"environments"`
+	} `json:"_embedded"`
+}
+
+// type Pipelines []struct {
+// 	Links struct {
+// 		Self struct {
+// 			Href string `json:"href"`
+// 		} `json:"self"`
+// 		Doc struct {
+// 			Href string `json:"href"`
+// 		} `json:"doc"`
+// 		Find struct {
+// 			Href string `json:"href"`
+// 		} `json:"find"`
+// 	} `json:"_links"`
+// 	Name string `json:"name"`
+// }
 
 type Payload struct {
 	Pipelines
