@@ -89,8 +89,7 @@ func TestGocdFindPipeline(t *testing.T) {
 
 	if environmentName != "" {
 		log.Debug("Pipeline in environment with name: %+v", environmentName)
-	}
-	else {
+	} else {
 		log.Debug("Pipeline not found in an environment")
 	}
 }

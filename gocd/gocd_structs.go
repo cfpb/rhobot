@@ -130,7 +130,7 @@ type EnvironmentConfig struct {
 	} `json:"_embedded"`
 }
 
-type Payload struct {
+type PatchPayload struct {
 	Pipelines struct {
 		Remove []string `json:"remove"`
 	} `json:"pipelines"`
