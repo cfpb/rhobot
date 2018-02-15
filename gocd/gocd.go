@@ -110,17 +110,15 @@ func Delete(server *Server, pipelineName string) (pipeline Pipeline, err error) 
 
 	environmentName := findPipelineInEnvironment(environment, pipelineName)
 
-	defer func(err error) {
-		if environmentName != "" {
-			log.Infof("Pipeline found in environment, removing from environment: %v", environmentName)
+	if environmentName != "" {
+		log.Infof("Pipeline found in environment, removing from environment: %v", environmentName)
 
-			err := server.envConfigPOST(pipelineName, environmentName)
-			if err != nil {
-				log.Info("Environment not patched")
-				return
-			}
+		err = server.environmentPATCH(pipelineName, environmentName)
+		if err != nil {
+			log.Info("Environment not patched")
+			return
 		}
-	}(err)
+	}
 
 	pipeline, err = server.pipelineDELETE(pipelineName)
 	if err != nil {
