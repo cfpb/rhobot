@@ -29,43 +29,96 @@ INSERT INTO "{{metadata.schema}}"."{{metadata.table}}" ("title", "query", "execu
 
 // TemplateHealthcheckHTML pongo2 template for healthchecks
 const TemplateHealthcheckHTML = `
-	<h2>{{ metadata.status }}</h2>
-  <h2>{{ metadata.name }} - Running against database "{{ metadata.db_name }}"</h2>
-    <table border=1 frame=void rules=rows>
-        <tr>
-            <th>Title</th>
-						<th>Severity</th>
-            <th>Query</th>
-            <th>Test Ran?</th>
-            <th>Expected</th>
-            <th>Operation</th>
-            <th>Actual</th>
-        </tr>
-        {% for element in elements %}
-            <tr>
-                <td>{{ element.Title }}</td>
-								<td>{{ element.Severity }}</td>
-                <td>{{ element.Query }}</td>
-                {% if element.Passed == "SUCCESS"%}
-                    <td bgcolor="green">{{ element.Passed }}</td>
-										{% if element.Equal == "TRUE"%}
-                    	<td bgcolor="green">{{ element.Expected }}</td>
-											<td bgcolor="green">{{ element.Operation }}</td>
-                    	<td bgcolor="green">{{ element.Actual }}</td>
-										{% elif  element.Equal == "FALSE" %}
-                    	<td bgcolor="red">{{ element.Expected }}</td>
-											<td bgcolor="red">{{ element.Operation }}</td>
-                    	<td bgcolor="red">{{ element.Actual }}</td>
-										{% endif %}
-                {% elif  element.Passed == "FAIL" %}
-                    <td bgcolor="red">{{ element.Passed }}</td>
-                    <td>{{ element.Error }}</td>
-                {% endif %}
-            </tr>
-        {% endfor %}
-    </table>
-    {{ metadata.footer | safe }}<br>
-    {{ metadata.timestamp }}
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=us-ascii">
+</head>
+<style type="text/css">
+
+body, p, h1, h3, ul, table {
+		font-family: arial, sans-serif;
+		font-size: 16px;
+		color: #101820;
+	}
+
+	h1 {
+		font-size: 34px;
+		font-weight: normal;
+	}
+
+	h3 {
+		font-size: 22px;
+		font-weight: normal;
+	}
+
+	table {
+		width: 100%;
+		border-spacing: 0px;
+	}
+
+	td {
+		text-align: left;
+		padding: 8px;
+	}
+
+	td.entity {
+		background-color: #addc91;
+	}
+
+	td.header_field {
+		background-color: #e7e8e9;
+		width: 13%;
+	}
+
+	td.data {
+		border-bottom: 1px solid #b4b5b6;
+	}
+
+</style>
+
+
+
+<h2>{{ metadata.status }}</h2>
+<h2>{{ metadata.name }} - Running against database "{{ metadata.db_name }}"</h2>
+<table>
+	<tr>
+		<td class = "header_field" >Title</td>
+		<td class = "header_field" >Severity</td>
+		<td class = "header_field" >Query</td>
+		<td class = "header_field" >Test Ran?</td>
+		<td class = "header_field" >Expected</td>
+		<td class = "header_field" >Operation</td>
+		<td class = "header_field" >Actual</td>
+	</tr>
+	{% for element in elements %}
+	<tr>
+		<td class = "data" >{{ element.Title }}</td>
+		<td class = "data" >{{ element.Severity }}</td>
+		<td class = "data" >{{ element.Query }}</td>
+
+		{% if element.Equal == "TRUE"%}
+			{% set bg_equals = "MediumSeaGreen" %}
+		{% elif element.Equal == "FALSE" and element.Severity == "WARN"%}
+			{% set bg_equals = "LightGoldenRodYellow" %}
+		{% else %}
+			{% set bg_equals = "LightCoral" %}
+		{% endif %}
+
+		<td class = "data"  bgcolor={{bg_equals}}>{{ element.Passed }}</td>
+		{% if element.Passed == "SUCCESS"%}
+		<td class = "data"  bgcolor={{bg_equals}}>{{ element.Expected }}</td>
+		<td class = "data"  bgcolor={{bg_equals}}>{{ element.Operation }}</td>
+		<td class = "data"  bgcolor={{bg_equals}}>{{ element.Actual }}</td>
+		{% else %}
+		<td class = "data"  bgcolor={{bg_equals}} colspan="3">{{ element.Error }}</td>
+		{% endif %}
+
+	{% endfor %}
+	</tr>
+</table>
+
+{{ metadata.footer | safe }}<br> {{ metadata.timestamp }}
+</html>
 
 `
 
