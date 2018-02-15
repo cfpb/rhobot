@@ -109,7 +109,7 @@ func TestGocdGET(t *testing.T) {
 }
 
 func TestGocdDELETE(t *testing.T) {
-	_, _, err := server.pipelineDELETE("test")
+	_, err := server.pipelineDELETE("test")
 	if err != nil {
 		t.Error(err)
 	}
