@@ -174,6 +174,6 @@ func TestCLI(t *testing.T) {
 	os.Args = []string{"rhobot", "-V"}
 	main()
 
-	os.Args = []string{"healthchecks"}
+	os.Args = []string{"rhobot", "pipeline"}
 	main()
 }

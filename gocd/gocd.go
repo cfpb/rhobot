@@ -101,6 +101,33 @@ func Pull(server *Server, path string) (err error) {
 	return
 }
 
+// Attempt to delete pipeline if name matches existing
+func Delete(server *Server, pipelineName string) (pipeline Pipeline, err error) {
+	environment, err := server.environmentGET()
+	if err != nil {
+		return
+	}
+
+	environmentName := findPipelineInEnvironment(environment, pipelineName)
+
+	if environmentName != "" {
+		log.Infof("Pipeline found in environment, removing from environment: %v", environmentName)
+
+		err = server.environmentPATCH(pipelineName, environmentName)
+		if err != nil {
+			log.Info("Environment not patched")
+			return
+		}
+	}
+
+	pipeline, err = server.pipelineDELETE(pipelineName)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
 // Exist checks if a pipeline of a given name exist, returns it's etag or an empty string
 func Exist(server *Server, name string) (etag string, pipeline Pipeline, err error) {
 	pipeline, etag, err = server.pipelineGET(name)

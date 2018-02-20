@@ -79,6 +79,28 @@ func TestGocdPOST(t *testing.T) {
 	}
 }
 
+func TestGocdFindPipeline(t *testing.T) {
+	environment, err := server.environmentGET()
+	if err != nil {
+		t.Error(err)
+	}
+
+	environmentName := findPipelineInEnvironment(environment, "test")
+
+	if environmentName != "" {
+		log.Debug("Pipeline in environment with name: %+v", environmentName)
+	} else {
+		log.Debug("Pipeline not found in an environment")
+	}
+}
+
+func TestGocdEnvironmentGET(t *testing.T) {
+	_, err := server.environmentGET()
+	if err != nil {
+		t.Error(err)
+	}
+}
+
 func TestGocdGET(t *testing.T) {
 	_, _, err := server.pipelineGET("test")
 	if err != nil {
@@ -86,7 +108,7 @@ func TestGocdGET(t *testing.T) {
 	}
 }
 
-// //The following 2 tests require a pipeline to have a run history
+// //The following 3 tests require a pipeline to have a run history
 // //thus is commented out for testing on TravisCI
 // //Future scaffolding will be needed on travis to add an agent,
 // //add the agent and pipeline to an environment,
@@ -117,6 +139,13 @@ func TestGocdGET(t *testing.T) {
 // 	}
 //
 // 	artifactBuffer.WriteTo(os.Stdout)
+// }
+//
+// func TestGocdEnvironmentPATCH(t *testing.T) {
+// 	err = server.environmentPATCH("test", "future_named_env")
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
 // }
 
 func TestExist(t *testing.T) {
@@ -253,4 +282,11 @@ func TestGocdTimeout(t *testing.T) {
 		t.Error("did not Timeout but should have", err)
 	}
 
+}
+
+func TestGocdDELETE(t *testing.T) {
+	_, err := server.pipelineDELETE("test")
+	if err != nil {
+		t.Error(err)
+	}
 }
