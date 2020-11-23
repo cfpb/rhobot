@@ -10,7 +10,7 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/cfpb/rhobot/config"
+	"github.com/cfpb/rhobot/cli/config"
 )
 
 var gocdPipelineConfig []byte

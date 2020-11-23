@@ -66,6 +66,10 @@ func (p2rr Pongo2ReportRunner) ReportReader(reportSet Set) (io.Reader, error) {
 	if p2rr.StyleCSS {
 		premailerCSS := premailer.NewPremailerFromString(templateString, premailer.NewOptions())
 
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		premailerInline, err = premailerCSS.Transform()
 		if err != nil {
 			log.Fatal(err)
