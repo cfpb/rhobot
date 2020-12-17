@@ -1,0 +1,15 @@
+{
+    "elements": [
+        {
+            "Some": "simple",
+            "Thing": "simple"
+        },
+        {
+            "Some": "simple",
+            "Thing": "simple"
+        }
+    ],
+    "metadata": {
+        "test": "json"
+    }
+}

@@ -5,9 +5,9 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/cfpb/rhobot/config"
-	"github.com/cfpb/rhobot/database"
-	"github.com/cfpb/rhobot/report"
+	"github.com/cfpb/rhobot/cli/config"
+	"github.com/cfpb/rhobot/cli/database"
+	"github.com/cfpb/rhobot/cli/report"
 )
 
 var conf *config.Config

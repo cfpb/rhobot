@@ -4,8 +4,8 @@ import (
 	"os"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/cfpb/rhobot/config"
-	"github.com/cfpb/rhobot/gocd"
+	"github.com/cfpb/rhobot/cli/config"
+	"github.com/cfpb/rhobot/cli/gocd"
 	"github.com/urfave/cli"
 )
 
