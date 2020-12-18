@@ -7,10 +7,10 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 
-	"github.com/cfpb/rhobot/cli/config"
-	"github.com/cfpb/rhobot/cli/database"
-	"github.com/cfpb/rhobot/cli/healthcheck"
-	"github.com/cfpb/rhobot/cli/report"
+	"github.com/cfpb/rhobot/internal/config"
+	"github.com/cfpb/rhobot/internal/database"
+	"github.com/cfpb/rhobot/internal/healthcheck"
+	"github.com/cfpb/rhobot/internal/report"
 )
 
 var conf *config.Config
