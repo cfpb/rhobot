@@ -1,7 +1,7 @@
 ## simple makefile to log workflow
 # .PHONY: all test clean build install
 
-GOFLAGS ?= -v$(GOFLAGS:)
+GOFLAGS ?= -v -a $(GOFLAGS:)
 
 PGHOST ?=localhost
 PGPORT ?=5432
